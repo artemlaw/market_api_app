@@ -48,6 +48,7 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
 
     ya_set = set(offers_commission_dict)
     print(f"ЯндексМаркет: {len(ya_set)}")
+    print(f"Что не видит colab: {len(ms_ya_products_)}")
     ms_set = set(ms_ya_products_)
     print(f"Мой склад: {len(ms_set)}")
 
@@ -56,10 +57,10 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
         for key in ya_set & ms_set
     }
 
-    ya_ms_set = ya_set - ms_set
-    if ya_ms_set:
-        print("Номенклатура которая есть в ЯндексМаркете, но не связана в МС:")
-        print("\n".join(ya_ms_set))
+    # ya_ms_set = ya_set - ms_set
+    # if ya_ms_set:
+    #     print("Номенклатура которая есть в ЯндексМаркете, но не связана в МС:")
+    #     print("\n".join(ya_ms_set))
 
     data_for_report = [
         get_ya_data_for_article(article, result_dict[article], plan_margin)
