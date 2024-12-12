@@ -14,9 +14,14 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
     # print(f"Мой склад: {len(products_)}")
     print(f"Что не видит colab 1: {len(products_)}")
     # Оставляем только Яндекс
-    ms_ya_products = [
-        product_ for product_ in products_ if product_.get('pathName', '') == 'ЯндексМаркет'
-    ]
+    ms_ya_products = []
+
+    for product_ in products_:
+        if product_.get('pathName', '') == 'ЯндексМаркет':
+            ms_ya_products.append(product_)
+    # ms_ya_products = [
+    #     product_ for product_ in products_ if product_.get('pathName', '') == 'ЯндексМаркет'
+    # ]
     print(f"Что не видит colab 2: {len(ms_ya_products)}")
     print("Мой склад: Получение остатка товара")
     stocks = ms_client.get_stock()
