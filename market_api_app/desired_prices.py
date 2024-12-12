@@ -5,13 +5,13 @@ from market_api_app import get_api_tokens, MoySklad, get_stock_for_bundle, get_p
 
 # Применить в colab в виде
 # from google.colab import files
-# report = get_desired_prices(plan_margin=28.0, fbs=True)
+# report = get_ym_desired_prices(plan_margin=28.0, fbs=True)
 # files.download(report)
 def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
     ms_token, _, ym_token = get_api_tokens()
     ms_client = MoySklad(api_key=ms_token)
     products_ = ms_client.get_bundles()
-    print(f"Мой склад: {len(products_)}")
+    # print(f"Мой склад: {len(products_)}")
     # Оставляем только Яндекс
     ms_ya_products = [
         product for product in products_ if "ЯндексМаркет" in product["pathName"]
@@ -47,7 +47,9 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
     )
 
     ya_set = set(offers_commission_dict)
+    print(f"ЯндексМаркет: {len(ya_set)}")
     ms_set = set(ms_ya_products_)
+    print(f"Мой склад: {len(ms_set)}")
 
     result_dict = {
         key: {**offers_commission_dict.get(key, {}), **ms_ya_products_.get(key, {})}
