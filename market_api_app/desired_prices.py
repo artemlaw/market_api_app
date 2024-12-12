@@ -12,15 +12,16 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
     ms_client = MoySklad(api_key=ms_token)
     products_ = ms_client.get_bundles()
     # print(f"Мой склад: {len(products_)}")
+    print(f"Что не видит colab 1: {len(products_)}")
     # Оставляем только Яндекс
     ms_ya_products = [
         product for product in products_ if "ЯндексМаркет" in product["pathName"]
     ]
+    print(f"Что не видит colab 2: {len(ms_ya_products)}")
     print("Мой склад: Получение остатка товара")
     stocks = ms_client.get_stock()
     ms_stocks = {stock["assortmentId"]: stock["quantity"] for stock in stocks}
     print("Мой склад: Получение себестоимости товара")
-    print(f"Что не видит colab 1: {len(ms_ya_products)}")
     ms_ya_products_ = {
         product["article"]: {
             "STOCK": get_stock_for_bundle(ms_stocks, product),
@@ -29,7 +30,6 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
         }
         for product in ms_ya_products
     }
-    print(f"Что не видит colab 2: {len(ms_ya_products_)}")
 
     ym_client = YaMarket(api_key=ym_token)
 
