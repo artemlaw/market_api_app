@@ -15,7 +15,7 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
     print(f"Что не видит colab 1: {len(products_)}")
     # Оставляем только Яндекс
     ms_ya_products = [
-        product for product in products_ if "ЯндексМаркет" in product["pathName"]
+        product_ for product_ in products_ if product_.get('pathName', '') == 'ЯндексМаркет'
     ]
     print(f"Что не видит colab 2: {len(ms_ya_products)}")
     print("Мой склад: Получение остатка товара")
@@ -115,3 +115,7 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
     style.style_dataframe(df, path_xls_file, "Номенклатура YA")
     print("Файл отчета готов")
     return path_xls_file
+
+
+if __name__ == '__main__':
+    get_ym_desired_prices(plan_margin=28.0, fbs=True)
