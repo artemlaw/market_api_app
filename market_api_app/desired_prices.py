@@ -12,18 +12,8 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
     ms_client = MoySklad(api_key=ms_token)
     products_ = ms_client.get_bundles()
     # print(f"Мой склад: {len(products_)}")
-    print(f"Что не видит colab 1: {len(products_)}")
     # Оставляем только Яндекс
-    ms_ya_products = []
-
-    for product_ in products_:
-        market = product_.get('pathName', '')
-        print(market)
-        if market == 'ЯндексМаркет':
-            ms_ya_products.append(product_)
-
-    # ms_ya_products = [p for p in products_ if p.get('pathName', '') == 'ЯндексМаркет']
-    print(f"Что не видит colab 2: {len(ms_ya_products)}")
+    ms_ya_products = [p for p in products_ if p.get('pathName', '') == 'ЯндексМаркет']
 
     print("Мой склад: Получение остатка товара")
     stocks = ms_client.get_stock()
@@ -63,10 +53,10 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
         for key in ya_set & ms_set
     }
 
-    # ya_ms_set = ya_set - ms_set
-    # if ya_ms_set:
-    #     print("Номенклатура которая есть в ЯндексМаркете, но не связана в МС:")
-    #     print("\n".join(ya_ms_set))
+    ya_ms_set = ya_set - ms_set
+    if ya_ms_set:
+        print("Номенклатура которая есть в ЯндексМаркете, но не связана в МС:")
+        print("\n".join(ya_ms_set))
 
     data_for_report = [
         get_ya_data_for_article(article, result_dict[article], plan_margin)
