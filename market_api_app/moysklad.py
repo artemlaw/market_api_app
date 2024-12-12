@@ -68,22 +68,22 @@ class MoySklad(ApiBase):
             },
             "count": count,
             "salePrice": {
-              "priceType": {
-                "meta": {
-                  "href": "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/"
-                          "2933628a-0c62-11ef-0a80-1736000feaeb",
-                  "type": "pricetype",
-                  "mediaType": "application/json"
+                "priceType": {
+                    "meta": {
+                        "href": "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/"
+                                "2933628a-0c62-11ef-0a80-1736000feaeb",
+                        "type": "pricetype",
+                        "mediaType": "application/json"
+                    }
                 }
-              }
             },
             "template": {
-              "meta": {
-                "href": "https://api.moysklad.ru/api/remap/1.2/entity/assortment/metadata/customtemplate/"
-                        "d01825c6-7377-415b-8db4-f99b8dbd1fb4",
-                "type": "embeddedtemplate",
-                "mediaType": "application/json"
-              }
+                "meta": {
+                    "href": "https://api.moysklad.ru/api/remap/1.2/entity/assortment/metadata/customtemplate/"
+                            "d01825c6-7377-415b-8db4-f99b8dbd1fb4",
+                    "type": "embeddedtemplate",
+                    "mediaType": "application/json"
+                }
             }
         }
         result = self.post(url, data=data)
@@ -119,3 +119,38 @@ class MoySklad(ApiBase):
         url = f'{self.host}entity/customerorder{filter_str}'
         params = {'limit': 100, 'offset': 0}
         return self.fetch_data(url, params)
+
+
+def get_ms_orders(client: MoySklad, from_date: str, to_date: str, project: str = 'Яндекс Маркет') -> list:
+    # from_date и to_date в формате '2024-12-10 00:00:00.000'
+    # project = 'Ozon' или 'Яндекс Маркет'
+    filter_ = f'?filter=moment>{from_date};moment<{to_date};&order=name,desc&expand=positions.assortment,state,project'
+    ms_orders = client.get_orders(filter_)
+
+    return [
+        {
+            'order_number': order.get('name', ''),
+            'created': order.get('created', ''),
+            'article': position.get('assortment', {}).get('article', ''),
+            'price': position.get('price', 0.0) / 100,
+            'quantity': position.get('quantity', 0.0)
+        }
+        for order in ms_orders
+        if order.get('state', {}).get('name', '') not in ['Отменен'] and order.get('project', {}).get('name',
+                                                                                                      '') == project
+        for position in order.get('positions', {}).get('rows', [])
+    ]
+
+
+def get_sales_by_orders(orders: list) -> dict:
+    articles_quantities = {}
+    for order in orders:
+        positions = order.get('positions', {}).get('rows', [])
+        for position in positions:
+            article = position.get('assortment', {}).get('article', '')
+            quantity = position.get('quantity', 0.0)
+            if article in articles_quantities:
+                articles_quantities[article] += quantity
+            else:
+                articles_quantities[article] = quantity
+    return articles_quantities
