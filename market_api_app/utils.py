@@ -1,10 +1,9 @@
 import os
-import re
 import time
 from datetime import datetime, timedelta
 
 from market_api_app import WB, MoySklad
-
+from market_api_app.utils_ms import get_ms_stocks_dict
 
 def get_api_tokens() -> (str, str):
     try:
@@ -50,52 +49,12 @@ def get_category_dict(wb_client: WB) -> dict:
     return {comm['subjectName']: (comm['kgvpMarketplace'], comm['paidStorageKgvp']) for comm in commission['report']}
 
 
-def get_product_id_from_url(url: str) -> str | None:
-    pattern = r'/product/([0-9a-fA-F-]+)'
-    match = re.search(pattern, url)
-    if match:
-        return match.group(1)
-    else:
-        return None
-
-
-def get_stock_for_bundle(stocks_dict: dict, product: list) -> float:
-    product_bundles = product['components']['rows']
-    product_stock = 0.0
-    for bundle in product_bundles:
-        bundle_id = get_product_id_from_url(bundle['assortment']['meta']['href'])
-        if bundle_id in stocks_dict:
-            p_stock = stocks_dict[bundle_id] // bundle['quantity']
-            if p_stock > product_stock:
-                product_stock = p_stock
-    return product_stock
-
-
-def get_ms_stocks_dict(ms_client: MoySklad, products: list) -> dict:
-    print('Получение остатков номенклатуры')
-    stocks = ms_client.get_stock()
-    stocks_dict = {stock['assortmentId']: stock['quantity'] for stock in stocks}
-    wb_stocks_dict = {int(product['code']): get_stock_for_bundle(stocks_dict, product) for product in products}
-    return wb_stocks_dict
-
-
 def get_price_dict(wb_client: WB) -> dict:
     data = wb_client.get_product_prices()
     # TODO: Добавить возможность получения данных по другим размерам, либо изменить источник
     price_dict = {d['nmID']: {'price': d['sizes'][0]['discountedPrice'], 'discount': d['discount']} for d in data
                   if len(d['sizes']) == 1}
     return price_dict
-
-
-def get_prime_cost(prices_list: list, price_name: str = "Цена продажи") -> float:
-    return next(
-        (
-            price.get("value", 0.0) / 100
-            for price in prices_list
-            if price["priceType"]["name"] == price_name
-        ),
-        0.0,
-    )
 
 
 def get_dict_for_report(products: list, ms_client: MoySklad, wb_client: WB) -> dict:
