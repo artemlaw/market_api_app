@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from market_api_app import WB, MoySklad
 from market_api_app.utils_ms import get_ms_stocks_dict
 
+
 def get_api_tokens() -> (str, str):
     try:
         from google.colab import userdata

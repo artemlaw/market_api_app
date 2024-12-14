@@ -1,5 +1,4 @@
 import logging
-from pprint3x import pprint
 
 from market_api_app.utils import get_ya_ids, get_value_by_name
 from market_api_app.base import ApiBase
@@ -7,7 +6,7 @@ from market_api_app.base import ApiBase
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('YaMarket')
 
-# Константа можно вынести в перспективе в файл настроек
+# Константа можно вынести в перспективе в файл настроек модуля
 transit_warehouse_type = "MINI_SORTING_CENTER"  # Склад сортировки. Определяет стоимость обработки
 
 
@@ -242,7 +241,7 @@ def get_ym_orders(ym_client: YaMarket, campaign_id: int = 0, from_date='12-12-20
             'quantity': position.get('count', 0)
         }
         for order in ym_orders
-        if order.get('status', '') not in ['Отменен']
+        if order.get('status', '') not in ['CANCELLED']
         for position in order.get('items', [])
     ]
 

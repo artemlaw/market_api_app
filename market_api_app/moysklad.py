@@ -91,7 +91,7 @@ class MoySklad(ApiBase):
             response_content = result.content
         else:
             response_content = ''
-            logger.error('Не удалось создать заказ.')
+            logger.error('Не удалось получить этикетку.')
         return response_content
 
     def get_stock_all(self):
