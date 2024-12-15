@@ -6,4 +6,4 @@ from .ozon import Ozon, get_oz_orders, get_oz_data_for_order
 from .tabstyle import TabStyles, ExcelStyle
 from .utils import *
 from .utils_ms import *
-from .desired_prices import get_ym_desired_prices, get_ym_profitability
+from .desired_prices import get_ym_desired_prices, get_ym_profitability, get_oz_desired_prices, get_oz_profitability

@@ -1,4 +1,5 @@
 import logging
+import math
 
 from market_api_app.utils import date_to_utc
 from market_api_app.base import ApiBase
@@ -9,7 +10,10 @@ logger = logging.getLogger('Ozon')
 
 # Константа можно вынести в перспективе в файл настроек модуля
 SORTING = 20.0  # Стоимость обработки, зависит от склада сдачи
-ACQUIRING_PERCENT = 1.5  # Эквайринг, %
+LAST_MILE_PERCENT = 5.5  # Последняя миля, %
+LAST_MILE_MAX = 500.0
+last_mile_percent = 5.5
+ACQUIRING_PERCENT = 1.6  # Эквайринг, %
 # Проверять актуальность тарифа по логистике в calculate_logistic_cost
 # и Последней мили в calculate_last_mile_cost
 
@@ -142,7 +146,7 @@ def calculate_logistic_cost(liters: float) -> float:
     elif 0.4 < liters <= 1:
         return 76
     elif 1 < liters <= 190:
-        return 76 + (liters - 1) * 12
+        return 76 + math.ceil((liters - 1)) * 12
     else:
         return 2344
 
@@ -151,80 +155,96 @@ def calculate_last_mile_cost(price: float) -> float:
     """
     Считает стоимость последней мили как 5.5% от цены, но не более 500 рублей.
     """
-    cost = price * 5.5 / 100
-    return min(cost, 500)
+    cost = round(price * LAST_MILE_PERCENT / 100, 1)
+    return min(cost, LAST_MILE_MAX)
+
+
+def search_new_price(price: float, profitability: float, plan_profitability: float, kkk: float):
+    # Если рентабельность меньше плана, то цену увеличиваем, если больше - уменьшаем
+    if profitability > plan_profitability:
+        new_price = price - kkk
+        kkk = max(kkk / 2, 1)
+    elif profitability < plan_profitability:
+        new_price = price + kkk
+        kkk = max(kkk / 2, 1)
+    else:
+        new_price = price
+    return new_price, kkk
+
+
+def get_profitability_for_price(price: float, prime_cost: float, commission_percent: float, payment_percent: float,
+                                delivery_cost: float, sorting: float):
+    reward = round(
+        (price * commission_percent)
+        + (price * payment_percent)
+        + delivery_cost
+        + calculate_last_mile_cost(price)
+        + sorting,
+        1,
+    )
+    profit = round(price - prime_cost - reward, 1)
+    return round(profit / price * 100, 1)
+
+
+# Использовать для проверки
+def get_recommended_price(price: float, profitability: float, plan_profitability: float, prime_cost: float,
+                          commission_percent: float, payment_percent: float, delivery_cost: float, sorting: float):
+    kkk = 100
+    prof_min, prof_max = plan_profitability - 0.1, plan_profitability + 0.1
+    while profitability <= prof_min or profitability >= prof_max:
+        price, kkk = search_new_price(price, profitability, plan_profitability, kkk)
+        profitability = get_profitability_for_price(price, prime_cost, commission_percent, payment_percent,
+                                                    delivery_cost, sorting)
+    return round(price), round(profitability, 1)
 
 
 def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 28.0):
-    margin = plan_margin / 100
+    """
+    Расчет прибыли озон
+    _________________________________________________________
+    commission_cost - Комиссия % от цены, по категории товара
+    acquiring_cost - Эквайринг 1,5% от цены
+    delivery_cost - Логистика:
+        * до 0,4 литра включительно — 43₽;
+        * свыше 0,4 литра до 1 литра включительно — 76₽;
+        * до 190 литров включительно — 12₽ за каждый дополнительный литр свыше объёма 1 литра;
+        * свыше 190 литров — 2344₽
+    delivery_cross_cost - Последняя миля 5,5% от цены, но не больше 500 рублей
+    sorting - Обработка = 20₽
+    """
+    margin = round(plan_margin / 100, 3)
     article = order.get('article', '')
     article_data = tariffs_dict[article]
     price = order.get("price", 0.0)
     prime_cost = article_data.get("PRIME_COST", 0.0)
-    # TODO: Продолжить тут подбор значений
-    commission_percent = round(article_data.get("FEE", {}).get("percent", 0.0) / 100, 3)
+
+    commission_percent = round(article_data.get("sales_percent_fbs", 0) / 100, 3)
     commission_cost = round(price * commission_percent, 1)
-    agency_commission = article_data.get("AGENCY_COMMISSION", 0.0)
 
-    payment_percent = round(
-        article_data.get("PAYMENT_TRANSFER", {}).get("percent", 0.0) / 100, 3
-    )
+    payment_percent = round(ACQUIRING_PERCENT / 100, 3)
+    acquiring_cost = round(price * payment_percent, 1)
 
-    acquiring_cost = round((price * payment_percent) + agency_commission, 1)
+    volume_weight = article_data.get("volume_weight", 0.0)
+    delivery_cost = calculate_logistic_cost(volume_weight)
 
-    delivery_cost_percent = round(
-        article_data.get("DELIVERY_TO_CUSTOMER", {}).get("percent", 0.0) / 100, 3
-    )
+    delivery_cross_percent = round(LAST_MILE_PERCENT / 100, 3)
+    delivery_cross_cost = calculate_last_mile_cost(price)
 
-    express_delivery_percent = round(
-        article_data.get("EXPRESS_DELIVERY", {}).get("percent", 0.0) / 100, 3
-    )
-
-    delivery_percent = round(delivery_cost_percent + express_delivery_percent, 3)
-
-    delivery_cross_cost = article_data.get("CROSSREGIONAL_DELIVERY", 0.0)
     sorting = SORTING
 
     recommended_price = round(
-        (prime_cost + agency_commission + delivery_cross_cost + sorting)
-        / (1 - margin - commission_percent - payment_percent - delivery_percent)
+        (prime_cost + delivery_cost + sorting)
+        / (1 - margin - commission_percent - payment_percent - delivery_cross_percent)
     )
 
-    delivery_cost_max = article_data.get("DELIVERY_TO_CUSTOMER", {}).get(
-        "max_value", 0.0
-    )
-    express_delivery_max = article_data.get("EXPRESS_DELIVERY", {}).get(
-        "max_value", 0.0
-    )
-    express_delivery_min = article_data.get("EXPRESS_DELIVERY", {}).get(
-        "min_value", 0.0
+    # Проверяем, что последняя миля не превышает 500руб и делаем пересчет рекомендуемой цены
+    delivery_cross_cost_ = calculate_last_mile_cost(recommended_price)
+    recommended_price = round(
+        (prime_cost + delivery_cost + sorting + delivery_cross_cost_)
+        / (1 - margin - commission_percent - payment_percent)
     )
 
-    fbs_delivery, express_delivery = 0.0, 0.0
-    if delivery_cost_max:
-        fbs_delivery = min(round(price * delivery_percent, 1), delivery_cost_max)
-        delivery_cost_ = min(
-            recommended_price * delivery_cost_percent, delivery_cost_max
-        )
-        recommended_price = round(
-            (prime_cost + agency_commission + delivery_cross_cost + sorting + delivery_cost_)
-            / (1 - margin - commission_percent - payment_percent)
-        )
-    elif express_delivery_max:
-        express_delivery = max(
-            min(round(price * express_delivery_percent, 1), express_delivery_max),
-            express_delivery_min,
-        )
-        express_delivery_ = max(
-            min(recommended_price * express_delivery_percent, express_delivery_max),
-            express_delivery_min,
-        )
-        recommended_price = round(
-            (prime_cost + agency_commission + delivery_cross_cost + sorting + express_delivery_)
-            / (1 - margin - commission_percent - payment_percent)
-        )
-
-    delivery_cost = fbs_delivery + express_delivery
+    # TODO: Добавить проверку на прибыль по рекомендованной цене
 
     reward = round(
         commission_cost

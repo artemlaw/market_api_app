@@ -247,7 +247,7 @@ def get_ym_orders(ym_client: YaMarket, campaign_id: int = 0, from_date='12-12-20
 
 
 def get_ya_data_for_article(article, article_data, plan_margin: float = 28.0):
-
+    margin = round(plan_margin / 100, 3)
     price = article_data.get("PRICE", 0.0)
     prime_cost = article_data.get("PRIME_COST", 0.0)
     commission_cost = round(article_data.get("FEE").get("current_amount", 0.0), 1)
@@ -275,8 +275,6 @@ def get_ya_data_for_article(article, article_data, plan_margin: float = 28.0):
     )
     profit = round(price - prime_cost - reward, 1)
     profitability = round(profit / price * 100, 1)
-
-    margin = plan_margin / 100
 
     commission_percent = round(article_data.get("FEE", {}).get("percent", 0.0) / 100, 3)
     payment_percent = round(
@@ -326,6 +324,8 @@ def get_ya_data_for_article(article, article_data, plan_margin: float = 28.0):
             / (1 - margin - commission_percent - payment_percent)
         )
 
+    # TODO: Добавить проверку на прибыль по рекомендованной цене
+
     return {
         "name": article_data.get("NAME", ""),
         "article": article,
@@ -344,7 +344,7 @@ def get_ya_data_for_article(article, article_data, plan_margin: float = 28.0):
 
 
 def get_ya_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 28.0):
-    margin = plan_margin / 100
+    margin = round(plan_margin / 100, 3)
     article = order.get('article', '')
     article_data = tariffs_dict[article]
     price = order.get("price", 0.0)
