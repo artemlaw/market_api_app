@@ -9,7 +9,7 @@ from market_api_app import get_api_tokens, MoySklad, get_stock_for_bundle, get_p
 # report = get_ym_desired_prices(plan_margin=28.0, fbs=True)
 # files.download(report)
 def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
-    ms_token, _, ym_token = get_api_tokens()
+    ms_token, _, ym_token, _, _ = get_api_tokens()
     ms_client = MoySklad(api_key=ms_token)
     products_ = ms_client.get_bundles()
     # print(f"Мой склад: {len(products_)}")
@@ -116,7 +116,7 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
 
 
 def get_ym_profitability(from_date: str, to_date: str, plan_margin: float = 28.0, fbs: bool = True):
-    ms_token, _, ym_token = get_api_tokens()
+    ms_token, _, ym_token, _, _ = get_api_tokens()
     ms_client = MoySklad(ms_token)
     ms_products = get_ms_products(ms_client, project='ЯндексМаркет')
 
@@ -209,7 +209,7 @@ def get_ym_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     # print(df)
     path_xls_file = f'ya_{"fbs" if fbs else "express"}_рентабельность_заказы.xlsx'
     style = ExcelStyle()
-    style.style_dataframe(df, path_xls_file, "Номенклатура YA")
+    style.style_dataframe(df, path_xls_file, "Заказы YA")
     print("Файл отчета готов")
     return path_xls_file
 

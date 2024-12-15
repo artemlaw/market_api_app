@@ -12,7 +12,9 @@ def get_api_tokens() -> (str, str):
         MS_API_TOKEN = userdata.get("MS_API_TOKEN")
         WB_API_TOKEN = userdata.get("WB_API_TOKEN")
         YM_API_TOKEN = userdata.get("YM_API_TOKEN")
-        return MS_API_TOKEN, WB_API_TOKEN, YM_API_TOKEN
+        OZ_CLIENT_ID = userdata.get("OZ_CLIENT_ID")
+        OZ_API_TOKEN = userdata.get("OZ_API_TOKEN")
+        return MS_API_TOKEN, WB_API_TOKEN, YM_API_TOKEN, OZ_CLIENT_ID, OZ_API_TOKEN
     except ImportError:
         pass
     from dotenv import load_dotenv
@@ -21,8 +23,10 @@ def get_api_tokens() -> (str, str):
     MS_API_TOKEN = os.getenv("MS_API_TOKEN")
     WB_API_TOKEN = os.getenv("WB_API_TOKEN")
     YM_API_TOKEN = os.getenv("YM_API_TOKEN")
+    OZ_CLIENT_ID = os.getenv("OZ_CLIENT_ID")
+    OZ_API_TOKEN = os.getenv("OZ_API_TOKEN")
 
-    return MS_API_TOKEN, WB_API_TOKEN, YM_API_TOKEN
+    return MS_API_TOKEN, WB_API_TOKEN, YM_API_TOKEN, OZ_CLIENT_ID, OZ_API_TOKEN
 
 
 def get_ya_ids():
@@ -289,6 +293,19 @@ def wb_get_orders(wb_client: WB, start_of_day: str, end_of_day: str):
     print(f"{'Без отмены':<15}{len(wb_orders) - len(orders_fbs_cancel) - len(orders_fbo_cancel):<10}")
 
     return orders_fbs, orders_fbo
+
+
+def date_to_utc(date_str: str, start_of_day: bool = True) -> str:
+    """
+    Принимает строку в формате '15.12.2024' и возвращает строку в формате UTC: '2024-12-15T00:00:00Z'
+    или '2024-12-15T23:59:59Z'
+    """
+    date_ = datetime.strptime(date_str, '%d-%m-%Y')
+    if start_of_day:
+        date_ = date_.replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        date_ = date_.replace(hour=23, minute=59, second=59, microsecond=999999)
+    return date_.isoformat() + 'Z'
 
 
 if __name__ == '__main__':

@@ -70,6 +70,9 @@ def get_ms_orders(client: MoySklad, from_date: str, to_date: str, project: str =
 
 
 def get_ms_products(client: MoySklad, project: str = 'ЯндексМаркет') -> dict:
+    """
+    Получение товаров по project - значения 'ЯндексМаркет', 'Озон'
+    """
     ms_products = client.get_bundles()
     print('Мой склад: Получение товаров')
     # Отбираем только по проекту
