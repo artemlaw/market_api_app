@@ -7,15 +7,16 @@ from market_api_app.base import ApiBase
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('Ozon')
 
-
-# Константа можно вынести в перспективе в файл настроек модуля
+'''
+Константа можно вынести в перспективе в файл настроек модуля
+Необходимо проверять актуальность тарифов:
+    * Логистика - calculate_logistic_cost
+    * Последняя миля - calculate_last_mile_cost
+'''
 SORTING = 20.0  # Стоимость обработки, зависит от склада сдачи
 LAST_MILE_PERCENT = 5.5  # Последняя миля, %
 LAST_MILE_MAX = 500.0
-last_mile_percent = 5.5
 ACQUIRING_PERCENT = 1.6  # Эквайринг, %
-# Проверять актуальность тарифа по логистике в calculate_logistic_cost
-# и Последней мили в calculate_last_mile_cost
 
 
 class Ozon(ApiBase):
@@ -116,7 +117,14 @@ class Ozon(ApiBase):
         return result_json.get("result", {}).get("postings", [])
 
 
-def get_oz_orders(oz_client: Ozon, from_date='12-12-2024', to_date='13-12-2024'):
+def get_oz_orders(oz_client: Ozon, from_date: str = '12-12-2024', to_date: str = '13-12-2024') -> list:
+    """
+    Получение заказов
+    :param oz_client:
+    :param from_date: Дата начала в формате DD-MM-YYYY
+    :param to_date: Дата окончания в формате DD-MM-YYYY
+    :return: Список заказов в разрезе позиций товаров
+    """
     print('Ozon: Получение заказов')
     oz_orders = oz_client.get_orders(from_date, to_date)
     return [
@@ -153,13 +161,13 @@ def calculate_logistic_cost(liters: float) -> float:
 
 def calculate_last_mile_cost(price: float) -> float:
     """
-    Считает стоимость последней мили как 5.5% от цены, но не более 500 рублей.
+    Считает стоимость последней мили как LAST_MILE_PERCENT % от цены, но не более LAST_MILE_MAX рублей.
     """
     cost = round(price * LAST_MILE_PERCENT / 100, 1)
     return min(cost, LAST_MILE_MAX)
 
 
-def search_new_price(price: float, profitability: float, plan_profitability: float, kkk: float):
+def search_new_price(price: float, profitability: float, plan_profitability: float, kkk: float) -> ():
     # Если рентабельность меньше плана, то цену увеличиваем, если больше - уменьшаем
     if profitability > plan_profitability:
         new_price = price - kkk
@@ -173,7 +181,7 @@ def search_new_price(price: float, profitability: float, plan_profitability: flo
 
 
 def get_profitability_for_price(price: float, prime_cost: float, commission_percent: float, payment_percent: float,
-                                delivery_cost: float, sorting: float):
+                                delivery_cost: float, sorting: float) -> float:
     reward = round(
         (price * commission_percent)
         + (price * payment_percent)
@@ -188,7 +196,8 @@ def get_profitability_for_price(price: float, prime_cost: float, commission_perc
 
 # Использовать для проверки
 def get_recommended_price(price: float, profitability: float, plan_profitability: float, prime_cost: float,
-                          commission_percent: float, payment_percent: float, delivery_cost: float, sorting: float):
+                          commission_percent: float, payment_percent: float, delivery_cost: float,
+                          sorting: float) -> ():
     kkk = 100
     prof_min, prof_max = plan_profitability - 0.1, plan_profitability + 0.1
     while profitability <= prof_min or profitability >= prof_max:

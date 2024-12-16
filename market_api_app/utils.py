@@ -63,7 +63,6 @@ def get_price_dict(wb_client: WB) -> dict:
 
 
 def get_dict_for_report(products: list, ms_client: MoySklad, wb_client: WB) -> dict:
-    # TODO: Переписать на асинхронные запросы
     category_dict = get_category_dict(wb_client)
     tariffs_logistic_data = wb_client.get_tariffs_for_box()
     ms_stocks_dict = get_ms_stocks_dict(ms_client, products)
@@ -306,6 +305,13 @@ def date_to_utc(date_str: str, start_of_day: bool = True) -> str:
     else:
         date_ = date_.replace(hour=23, minute=59, second=59, microsecond=999999)
     return date_.isoformat() + 'Z'
+
+
+def format_date(date_str: str) -> str:
+    """
+    Принимает дату в формате 'YYYY-MM-DD' и возвращает её в формате 'DD-MM-YYYY'
+    """
+    return datetime.strptime(date_str, '%Y-%m-%d').strftime('%d-%m-%Y')
 
 
 if __name__ == '__main__':

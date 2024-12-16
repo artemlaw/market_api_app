@@ -1,7 +1,7 @@
 import pandas as pd
 from market_api_app import get_api_tokens, MoySklad, get_stock_for_bundle, get_prime_cost, YaMarket, \
-    get_ya_campaign_and_business_ids, chunked_offers_list, get_dict_for_commission, get_ya_data_for_article, ExcelStyle, \
-    get_ya_data_for_order, get_ms_products, get_ym_orders, Ozon, get_oz_orders, get_oz_data_for_order
+    get_ya_campaign_and_business_ids, chunked_offers_list, get_dict_for_commission, get_ya_data_for_article, \
+    ExcelStyle, get_ya_data_for_order, get_ms_products, get_ym_orders, Ozon, get_oz_orders, get_oz_data_for_order
 
 '''
 Использовать в Colab в виде:
