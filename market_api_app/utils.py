@@ -6,7 +6,7 @@ from market_api_app import WB, MoySklad
 from market_api_app.utils_ms import get_ms_stocks_dict
 
 
-def get_api_tokens() -> (str, str):
+def get_api_tokens() -> (str, str, str, str, str):
     try:
         from google.colab import userdata
         MS_API_TOKEN = userdata.get("MS_API_TOKEN")

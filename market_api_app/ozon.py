@@ -233,8 +233,10 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
     payment_percent = round(ACQUIRING_PERCENT / 100, 3)
     acquiring_cost = round(price * payment_percent, 1)
 
-    volume_weight = article_data.get("volume_weight", 0.0)
-    delivery_cost = calculate_logistic_cost(volume_weight)
+    # Отдают вес, а не объем
+    # volume_weight = article_data.get("volume_weight", 0.0)
+    # delivery_cost = calculate_logistic_cost(volume_weight)
+    delivery_cost = float(article_data.get("fbs_direct_flow_trans_max_amount", 0))
 
     delivery_cross_percent = round(LAST_MILE_PERCENT / 100, 3)
     delivery_cross_cost = calculate_last_mile_cost(price)
