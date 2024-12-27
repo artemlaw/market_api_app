@@ -271,8 +271,6 @@ def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     oz_client = Ozon(client_id=oz_client_id, api_key=oz_token)
     products = oz_client.get_products()
 
-
-
     print("Ozon: Получение актуальных тарифов")
     offers_commission_dict = {
         product['offer_id']: {'acquiring': product.get('acquiring', 0),
@@ -294,10 +292,6 @@ def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     }
 
     oz_set = set(offers_commission_dict)
-
-    pr = offers_commission_dict['ASY-97125OZ5']
-    print(pr)
-
     ms_set = set(ms_products)
 
     tariffs_dict = {
