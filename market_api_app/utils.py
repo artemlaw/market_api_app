@@ -5,12 +5,15 @@ from datetime import datetime, timedelta
 def get_api_tokens() -> (str, str, str, str, str):
     try:
         from google.colab import userdata
-        MS_API_TOKEN = userdata.get("MS_API_TOKEN")
-        WB_API_TOKEN = userdata.get("WB_API_TOKEN")
-        YM_API_TOKEN = userdata.get("YM_API_TOKEN")
-        OZ_CLIENT_ID = userdata.get("OZ_CLIENT_ID")
-        OZ_API_TOKEN = userdata.get("OZ_API_TOKEN")
-        return MS_API_TOKEN, WB_API_TOKEN, YM_API_TOKEN, OZ_CLIENT_ID, OZ_API_TOKEN
+        try:
+            MS_API_TOKEN = userdata.get("MS_API_TOKEN")
+            WB_API_TOKEN = userdata.get("WB_API_TOKEN")
+            YM_API_TOKEN = userdata.get("YM_API_TOKEN")
+            OZ_CLIENT_ID = userdata.get("OZ_CLIENT_ID")
+            OZ_API_TOKEN = userdata.get("OZ_API_TOKEN")
+            return MS_API_TOKEN, WB_API_TOKEN, YM_API_TOKEN, OZ_CLIENT_ID, OZ_API_TOKEN
+        except KeyError:
+            pass
     except ImportError:
         pass
     from dotenv import load_dotenv
@@ -28,11 +31,13 @@ def get_api_tokens() -> (str, str, str, str, str):
 def get_ya_ids():
     try:
         from google.colab import userdata
-
-        fbs_campaign_id = userdata.get("YA_FBS_CAMPAIGN_ID")
-        ex_campaign_id = userdata.get("YA_EXPRESS_CAMPAIGN_ID")
-        business_id = userdata.get("YA_BUSINESS_ID")
-        return fbs_campaign_id, ex_campaign_id, business_id
+        try:
+            fbs_campaign_id = userdata.get("YA_FBS_CAMPAIGN_ID")
+            ex_campaign_id = userdata.get("YA_EXPRESS_CAMPAIGN_ID")
+            business_id = userdata.get("YA_BUSINESS_ID")
+            return fbs_campaign_id, ex_campaign_id, business_id
+        except KeyError:
+            pass
     except ImportError:
         pass
     from dotenv import load_dotenv
