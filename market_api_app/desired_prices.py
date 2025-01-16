@@ -1,7 +1,8 @@
 import pandas as pd
 from market_api_app import get_api_tokens, MoySklad, get_stock_for_bundle, get_prime_cost, YaMarket, \
     get_ya_campaign_and_business_ids, chunked_offers_list, get_dict_for_commission, get_ya_data_for_article, \
-    ExcelStyle, get_ya_data_for_order, get_ms_products, get_ym_orders, Ozon, get_oz_orders, get_oz_data_for_order
+    ExcelStyle, get_ya_data_for_order, get_ms_products, get_ym_orders, Ozon, get_oz_orders, get_oz_data_for_order, WB, \
+    get_logistic_dict, get_category_dict, get_price_dict, get_ms_products_for_wb, get_wb_data_for_article
 
 '''
 Использовать в Colab в виде:
@@ -371,15 +372,92 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     ms_token, wb_token, _, _, _ = get_api_tokens()
 
     ms_client = MoySklad(ms_token)
-    ms_products = get_ms_products(ms_client, project='WB')
-    # print(ms_products)
+    ms_products = get_ms_products_for_wb(ms_client)
+    print(from_date, to_date, plan_margin)
+    # TODO: Продолжить доработку отчета "Рентабельность заказов WB" описав функцию get_wb_profitability
     return ms_products
+
+
+def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs: bool = True):
+    ms_token, wb_token, _, _, _ = get_api_tokens()
+
+    wb_client = WB(api_key=wb_token)
+
+    tariffs_data = wb_client.get_tariffs_for_box()
+    warehouse_name = 'Маркетплейс' if fbs else 'Коледино'
+    logistic_dict = get_logistic_dict(tariffs_data, warehouse_name)
+    category_dict = get_category_dict(wb_client)
+    wb_prices_dict = get_price_dict(wb_client)
+
+    ms_client = MoySklad(api_key=ms_token)
+    # Получаем номенклатуру из МС только WB
+    ms_wb_products = get_ms_products_for_wb(ms_client)
+
+    data_for_report = [
+        get_wb_data_for_article(nm_id, ms_wb_products[nm_id], wb_prices_dict[nm_id], category_dict, logistic_dict,
+                                plan_margin, acquiring, fbs)
+        for nm_id in ms_wb_products if nm_id in wb_prices_dict
+    ]
+    print('Формирую отчет "Рекомендуемые цены"')
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+    df = pd.DataFrame(data_for_report)
+    df_total = (
+        df.agg(
+            {
+                "stock": "sum",
+                "price": "sum",
+                "recommended_price": "sum",
+                "prime_cost": "sum",
+                "commission": "sum",
+                "acquiring": "sum",
+                "logistics": "sum",
+                "profit": "sum",
+            }
+        )
+        .to_frame()
+        .T
+    )
+    df_total["name"] = ""
+    df_total["url"] = ""
+    df_total["nm_id"] = ""
+    df_total["article"] = ""
+    df_total["discount"] = ""
+    df_total["profitability"] = round((df_total["profit"] / df_total["price"]) * 100, 1)
+
+    df = pd.concat([df, df_total], ignore_index=True)
+
+    df.columns = [
+        "Номенклатура",
+        "Артикул",
+        "NmId",
+        "Ссылка",
+        "Остаток",
+        "Дисконт, %",
+        "Текущая цена",
+        "Рекомендуемая цена",
+        "Себестоимость",
+        "Комиссия",
+        "Эквайринг",
+        "Логистика",
+        "Прибыль",
+        "Рентабельность",
+    ]
+    # print(df)
+    path_xls_file = f'wb_{"fbs" if fbs else "fbo"}_рекомендуемые_цены.xlsx'
+    style = ExcelStyle()
+    style.style_dataframe(df, path_xls_file, "Номенклатура WB")
+    print("Файл отчета готов")
+    return path_xls_file
 
 
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    # get_ym_profitability('13-12-2024', '14-12-2024', plan_margin=28.0, fbs=True)
-    get_oz_profitability('26-12-2024', '27-12-2024', plan_margin=28.0)
+    # get_ym_profitability('15-12-2024', '16-12-2024', plan_margin=28.0, fbs=True)
+    # get_oz_profitability('26-12-2024', '27-12-2024', plan_margin=28.0)
 
     # data = get_wb_profitability('26-12-2024', '27-12-2024', plan_margin=28.0)
     # print(data)
+
+    wb = get_wb_desired_prices(plan_margin=28.0)
+    print(wb)

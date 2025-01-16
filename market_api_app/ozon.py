@@ -221,6 +221,7 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
     delivery_cross_cost - Последняя миля 5,5% от цены, но не больше 500 рублей
     sorting - Обработка = 20₽
     """
+
     margin = round(plan_margin / 100, 3)
     article = order.get('article', '')
     article_data = tariffs_dict[article]
@@ -255,7 +256,7 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
         / (1 - margin - commission_percent - payment_percent)
     )
 
-    # TODO: Добавить проверку на прибыль по рекомендованной цене
+    # TODO: Добавить проверку на минимальную цену по рекомендованной цене
 
     reward = round(
         commission_cost

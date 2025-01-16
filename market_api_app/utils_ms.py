@@ -69,9 +69,18 @@ def get_ms_orders(client: MoySklad, from_date: str, to_date: str, project: str =
     ]
 
 
+def get_attributes_dict(attributes_list: list) -> dict:
+    return {attribute['name']: attribute['value'] for attribute in attributes_list}
+
+
+def get_volume(attributes_dict: dict) -> float:
+    return ((attributes_dict.get('Длина', 0) * attributes_dict.get('Ширина', 0) * attributes_dict.get('Высота', 0))
+            / 1000.0) if attributes_dict else 0.0
+
+
 def get_ms_products(client: MoySklad, project: str = 'ЯндексМаркет') -> dict:
     """
-    Получение товаров по project - значения 'ЯндексМаркет', 'Озон'
+    Получение товаров по project - значения 'ЯндексМаркет', 'Озон', 'WB'
     """
     ms_products = client.get_bundles()
     print('Мой склад: Получение товаров')
@@ -83,13 +92,50 @@ def get_ms_products(client: MoySklad, project: str = 'ЯндексМаркет')
     stocks = client.get_stock()
     ms_stocks = {stock["assortmentId"]: stock["quantity"] for stock in stocks}
     print("Мой склад: Получение себестоимости товара")
+
+    if project == 'WB':
+        product_key = 'code'
+        price_name = "Цена основная"
+    else:
+        product_key = 'article'
+        price_name = "Цена продажи"
+
     return {
-        product["article"]: {
+        product[product_key]: {
             "STOCK": get_stock_for_bundle(ms_stocks, product),
-            "PRIME_COST": get_prime_cost(product.get("salePrices", [])),
+            "PRIME_COST": get_prime_cost(product.get("salePrices", []), price_name),
             "NAME": product["name"],
+            "ATTRIBUTES": get_attributes_dict(product.get('attributes', []))
         }
         for product in products_for_project
+    }
+
+
+def get_ms_products_for_wb(client: MoySklad) -> dict:
+    """
+    Получение товаров по 'WB'
+    """
+    ms_products = client.get_bundles()
+    print('Мой склад: Получение товаров')
+    # Отбираем только по проекту
+    products_for_project = [
+        product for product in ms_products if product.get('pathName', '') == 'WB'
+    ]
+    print("Мой склад: Получение остатка по товарам")
+    stocks = client.get_stock()
+    ms_stocks = {stock["assortmentId"]: stock["quantity"] for stock in stocks}
+    print("Мой склад: Получение себестоимости товара")
+
+    return {
+        int(product_['code']): {
+            "STOCK": get_stock_for_bundle(ms_stocks, product_),
+            "PRIME_COST": get_prime_cost(product_.get('salePrices', []), 'Цена основная'),
+            "NAME": product_['name'],
+            "ARTICLE": product_.get('article', ''),
+            "CATEGORY": get_attributes_dict(product_.get('attributes', [])).get('Категория товара', ''),
+            "VOLUME": get_volume(get_attributes_dict(product_.get('attributes', [])))
+        }
+        for product_ in products_for_project
     }
 
 

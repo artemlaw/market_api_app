@@ -291,6 +291,7 @@ def get_ya_data_for_article(article, article_data, plan_margin: float = 28.0):
 
     delivery_percent = round(delivery_cost_percent + express_delivery_percent, 3)
 
+    # TODO: Вынести расчет рекомендуемой цены в отдельную функцию
     recommended_price = round(
         (prime_cost + agency_commission + delivery_cross_cost + sorting)
         / (1 - margin - commission_percent - payment_percent - delivery_percent)
@@ -324,7 +325,7 @@ def get_ya_data_for_article(article, article_data, plan_margin: float = 28.0):
             / (1 - margin - commission_percent - payment_percent)
         )
 
-    # TODO: Добавить проверку на прибыль по рекомендованной цене
+    # TODO: Добавить проверку на минимальную цену по рекомендованной цене
 
     return {
         "name": article_data.get("NAME", ""),

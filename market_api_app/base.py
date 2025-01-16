@@ -27,6 +27,7 @@ class ApiBase:
                 return response
             except requests.RequestException as e:
                 if attempt < self.max_retries - 1:
+                    logger.debug(e.response)
                     logger.error(f'Неудачный запрос, ошибка: {e}. Повтор через {self.delay_seconds} секунд.')
                     time.sleep(self.delay_seconds)
                 else:
