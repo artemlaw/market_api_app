@@ -120,7 +120,7 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list)
     if len(offers) > 200:
         logger.error("Ограничение запроса комиссии! Не более 200 товаров")
         offers = offers[:200]
-    # Временно исключить проблемный товар с категориями
+    # Временно исключить проблемный товар с категориями номенклатуры
     offers = [offer for offer in offers if offer.get("mapping", {}).get("marketCategoryId", 0) not
               in [13870550, 13793703, 10683243, 13793704]]
 
