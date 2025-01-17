@@ -453,11 +453,11 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
 
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    # get_ym_profitability('15-12-2024', '16-12-2024', plan_margin=28.0, fbs=True)
+    get_ym_profitability('15-12-2024', '16-12-2024', plan_margin=28.0, fbs=True)
     # get_oz_profitability('26-12-2024', '27-12-2024', plan_margin=28.0)
 
     # data = get_wb_profitability('26-12-2024', '27-12-2024', plan_margin=28.0)
     # print(data)
 
-    wb = get_wb_desired_prices(plan_margin=28.0)
-    print(wb)
+    # wb = get_wb_desired_prices(plan_margin=28.0)
+    # print(wb)

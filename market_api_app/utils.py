@@ -2,6 +2,15 @@ import os
 from datetime import datetime, timedelta
 
 
+def in_colab() -> bool:
+    try:
+        from google.colab import userdata
+        return True
+    except ImportError:
+        return False
+
+
+# TODO: Переделать функцию для частичного получения ключей по потребности c опциями ms, wb, ym, ozon
 def get_api_tokens() -> (str, str, str, str, str):
     try:
         from google.colab import userdata
