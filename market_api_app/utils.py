@@ -1,14 +1,14 @@
 import os
 from datetime import datetime, timedelta
+from types import ModuleType
 
 
-def in_colab() -> bool:
+def in_colab() -> bool | ModuleType:
     try:
         from google.colab import userdata
-        return True
+        return userdata
     except ImportError:
         return False
-
 
 # TODO: Переделать функцию для частичного получения ключей по потребности c опциями ms, wb, ym, ozon
 def get_api_tokens() -> (str, str, str, str, str):
@@ -35,6 +35,21 @@ def get_api_tokens() -> (str, str, str, str, str):
     OZ_API_TOKEN = os.getenv("OZ_API_TOKEN")
 
     return MS_API_TOKEN, WB_API_TOKEN, YM_API_TOKEN, OZ_CLIENT_ID, OZ_API_TOKEN
+
+
+def get_tokens_for_wb() -> (str, str):
+    userdata = in_colab()
+    if userdata:
+        MS_API_TOKEN = userdata.get("MS_API_TOKEN")
+        WB_API_TOKEN = userdata.get("WB_API_TOKEN")
+    else:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+        MS_API_TOKEN = os.getenv("MS_API_TOKEN")
+        WB_API_TOKEN = os.getenv("WB_API_TOKEN")
+
+    return MS_API_TOKEN, WB_API_TOKEN
 
 
 def get_ya_ids():
@@ -111,5 +126,7 @@ def format_date(date_str: str) -> str:
 
 
 if __name__ == '__main__':
-    dates = get_date_for_request('2024-08-30', '2024-09-01')
-    print(dates)
+    # dates = get_date_for_request('2024-08-30', '2024-09-01')
+    # print(dates)
+    a = in_colab()
+    print(a)
