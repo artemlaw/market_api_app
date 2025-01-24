@@ -1,6 +1,6 @@
 import logging
 
-from market_api_app.utils import get_ya_ids, get_value_by_name
+from market_api_app.utils import get_api_keys, get_value_by_name
 from market_api_app.base import ApiBase
 
 logging.basicConfig(level=logging.INFO)
@@ -93,9 +93,25 @@ class YaMarket(ApiBase):
                 break
         return orders_list
 
+    def get_tree(self):
+        logger.info(f"Получение информации о категориях")
+        url = self.host + "categories/tree"
+        data = {
+          "language": "RU"
+        }
+        result = self.post(url, data)
+        if not result:
+            logger.error("Не удалось получить данные о категориях товара.")
+        result_json = result.json() if result else {}
+        if result_json and result_json.get("status") == "OK":
+            return result_json.get("result", {}).get("children", [])
+        else:
+            logger.error("Не удалось получить данные о категориях товара.")
+            return []
+
 
 def get_ya_campaign_and_business_ids(ym_client: YaMarket, fbs: bool = True):
-    ids = get_ya_ids()
+    ids = get_api_keys(["YA_FBS_CAMPAIGN_ID", "YA_EXPRESS_CAMPAIGN_ID", "YA_BUSINESS_ID"])
     campaign_id, business_id = (ids[0], ids[2]) if fbs else (ids[1], ids[2])
 
     if campaign_id and business_id:
@@ -120,9 +136,17 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list)
     if len(offers) > 200:
         logger.error("Ограничение запроса комиссии! Не более 200 товаров")
         offers = offers[:200]
-    # Временно исключить проблемный товар с категориями номенклатуры
-    offers = [offer for offer in offers if offer.get("mapping", {}).get("marketCategoryId", 0) not
-              in [13870550, 13793703, 10683243, 13793704]]
+    # Временно заменить проблемные категории по товару
+    mapping_updates = {
+        10683243: 5000962,
+        13793703: 13793401,
+        13793704: 13793401,
+        13870550: 2190938,
+    }
+    for offer in offers:
+        market_category_id = offer.get("mapping", {}).get("marketCategoryId", 0)
+        if market_category_id in mapping_updates:
+            offer["mapping"]["marketCategoryId"] = mapping_updates[market_category_id]
 
     dimensions = 0
     offers_data = [

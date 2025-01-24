@@ -2,7 +2,7 @@ import logging
 import requests
 import time
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('API')
 
 
