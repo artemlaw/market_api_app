@@ -141,7 +141,12 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list)
         10683243: 5000962,
         13793703: 13793401,
         13793704: 13793401,
-        13870550: 2190938,
+        13870550: 13870564,
+        14214098: 14716523,
+        12463727: 7683824,
+        7683844: 7683845,
+        12807781: 12807791,
+        6280628: 12699816
     }
     for offer in offers:
         market_category_id = offer.get("mapping", {}).get("marketCategoryId", 0)

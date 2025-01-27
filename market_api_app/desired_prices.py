@@ -449,8 +449,8 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
 
 
 if __name__ == '__main__':
-    get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    # get_ym_profitability('23-01-2025', '24-01-2025', plan_margin=28.0, fbs=True)
+    # get_ym_desired_prices(plan_margin=28.0, fbs=True)
+    get_ym_profitability('24-01-2025', '25-01-2025', plan_margin=28.0, fbs=True)
     # oz = get_oz_profitability('24-01-2025', '24-01-2025', plan_margin=28.0)
     # print(oz)
 
