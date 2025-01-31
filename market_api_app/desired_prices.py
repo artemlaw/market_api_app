@@ -1,8 +1,10 @@
 import pandas as pd
-from market_api_app import MoySklad, YaMarket, Ozon, WB, get_stock_for_bundle, get_prime_cost, chunked_offers_list, \
-    get_dict_for_commission, get_ya_data_for_article, ExcelStyle, get_ya_data_for_order, get_ms_products, \
-    get_ym_orders, get_oz_orders, get_oz_data_for_order, get_logistic_dict, get_category_dict, get_price_dict, \
-    get_ms_products_for_wb, get_wb_data_for_article, get_api_keys
+from market_api_app import MoySklad, YaMarket, Ozon, WB, ExcelStyle, get_api_keys
+from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb
+from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order
+from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article
+from market_api_app.utils_ya import get_category_ids, chunked_offers_list, get_dict_for_commission, \
+    get_ya_data_for_article, get_ym_orders, get_ya_data_for_order
 
 '''
 Использовать в Colab в виде:
@@ -16,7 +18,6 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
     campaign_id_key = "YA_FBS_CAMPAIGN_ID" if fbs else "YA_EXPRESS_CAMPAIGN_ID"
     ms_token, ym_token, business_id, campaign_id = get_api_keys(["MS_API_TOKEN", "YM_API_TOKEN", "YA_BUSINESS_ID",
                                                                  campaign_id_key])
-
     ms_client = MoySklad(api_key=ms_token)
     products_ = ms_client.get_bundles()
     # print(f"Мой склад: {len(products_)}")
@@ -39,12 +40,15 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True):
     ym_client = YaMarket(api_key=ym_token)
     offers = ym_client.get_offers(business_id)
 
+    category_ids = get_category_ids(ym_client)
+
     print("ЯндексМаркет: Получение актуальных тарифов")
     offers_commission_dict = chunked_offers_list(
         get_dict_for_commission,
         ym_client=ym_client,
         campaign_id=campaign_id,
         data=offers,
+        category_ids=category_ids,
         chunk_size=200,
     )
 
@@ -128,12 +132,15 @@ def get_ym_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     ym_client = YaMarket(api_key=ym_token)
     offers = ym_client.get_offers(business_id)
 
+    category_ids = get_category_ids(ym_client=ym_client)
+
     print("ЯндексМаркет: Получение актуальных тарифов")
     offers_commission_dict = chunked_offers_list(
         get_dict_for_commission,
         ym_client=ym_client,
         campaign_id=campaign_id,
         data=offers,
+        category_ids=category_ids,
         chunk_size=200,
     )
 
@@ -226,22 +233,23 @@ def get_oz_desired_prices(plan_margin: float = 28.0):
 
     print("Ozon: Получение актуальных тарифов")
     offers_commission_dict = {
-        product['offer_id']: {'acquiring': product.get('acquiring', 0),
-                              'fbs_deliv_to_customer_amount': product.get('commissions', {}).get('fbs_deliv_to_customer_amount', 0.0),
-                              'fbs_direct_flow_trans_max_amount': product.get('commissions', {}).get('fbs_direct_flow_trans_max_amount', 0),
-                              'fbs_direct_flow_trans_min_amount': product.get('commissions', {}).get('fbs_direct_flow_trans_min_amount', 0),
-                              'fbs_first_mile_max_amount': product.get('commissions', {}).get('fbs_first_mile_max_amount', 0),
-                              'fbs_first_mile_min_amount': product.get('commissions', {}).get('fbs_first_mile_min_amount', 0),
-                              'fbs_return_flow_amount': product.get('commissions', {}).get('fbs_return_flow_amount', 0),
-                              'fbs_return_flow_trans_max_amount': product.get('commissions', {}).get('fbs_return_flow_trans_max_amount', 0),
-                              'fbs_return_flow_trans_min_amount': product.get('commissions', {}).get('fbs_return_flow_trans_min_amount', 0),
-                              'sales_percent_fbs': product.get('commissions', {}).get('sales_percent_fbs', 0),
-                              'price': float(product.get('price', {}).get('price', '0.0000')),
-                              'marketing_price': float(product.get('price', {}).get('marketing_price', '0.0000')),
-                              'marketing_seller_price': float(product.get('price', {}).get('marketing_seller_price', '0.0000')),
-                              'volume_weight': product.get('volume_weight', 0.0)
-                              }
-        for product in products
+        prod['offer_id']: {
+            'acquiring': prod.get('acquiring', 0),
+            'fbs_deliv_to_customer_amount': prod.get('commissions', {}).get('fbs_deliv_to_customer_amount', 0.0),
+            'fbs_direct_flow_trans_max_amount': prod.get('commissions', {}).get('fbs_direct_flow_trans_max_amount', 0),
+            'fbs_direct_flow_trans_min_amount': prod.get('commissions', {}).get('fbs_direct_flow_trans_min_amount', 0),
+            'fbs_first_mile_max_amount': prod.get('commissions', {}).get('fbs_first_mile_max_amount', 0),
+            'fbs_first_mile_min_amount': prod.get('commissions', {}).get('fbs_first_mile_min_amount', 0),
+            'fbs_return_flow_amount': prod.get('commissions', {}).get('fbs_return_flow_amount', 0),
+            'fbs_return_flow_trans_max_amount': prod.get('commissions', {}).get('fbs_return_flow_trans_max_amount', 0),
+            'fbs_return_flow_trans_min_amount': prod.get('commissions', {}).get('fbs_return_flow_trans_min_amount', 0),
+            'sales_percent_fbs': prod.get('commissions', {}).get('sales_percent_fbs', 0),
+            'price': float(prod.get('price', {}).get('price', '0.0000')),
+            'marketing_price': float(prod.get('price', {}).get('marketing_price', '0.0000')),
+            'marketing_seller_price': float(prod.get('price', {}).get('marketing_seller_price', '0.0000')),
+            'volume_weight': prod.get('volume_weight', 0.0)
+        }
+        for prod in products
     }
 
     oz_set = set(offers_commission_dict)
@@ -251,6 +259,8 @@ def get_oz_desired_prices(plan_margin: float = 28.0):
         key: {**offers_commission_dict.get(key, {}), **ms_products.get(key, {})}
         for key in oz_set & ms_set
     }
+
+    print(plan_margin, tariffs_dict)
 
     oz_ms_set = oz_set - ms_set
     if oz_ms_set:
@@ -271,22 +281,23 @@ def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
 
     print("Ozon: Получение актуальных тарифов")
     offers_commission_dict = {
-        product['offer_id']: {'acquiring': product.get('acquiring', 0),
-                              'fbs_deliv_to_customer_amount': product.get('commissions', {}).get('fbs_deliv_to_customer_amount', 0.0),
-                              'fbs_direct_flow_trans_max_amount': product.get('commissions', {}).get('fbs_direct_flow_trans_max_amount', 0),
-                              'fbs_direct_flow_trans_min_amount': product.get('commissions', {}).get('fbs_direct_flow_trans_min_amount', 0),
-                              'fbs_first_mile_max_amount': product.get('commissions', {}).get('fbs_first_mile_max_amount', 0),
-                              'fbs_first_mile_min_amount': product.get('commissions', {}).get('fbs_first_mile_min_amount', 0),
-                              'fbs_return_flow_amount': product.get('commissions', {}).get('fbs_return_flow_amount', 0),
-                              'fbs_return_flow_trans_max_amount': product.get('commissions', {}).get('fbs_return_flow_trans_max_amount', 0),
-                              'fbs_return_flow_trans_min_amount': product.get('commissions', {}).get('fbs_return_flow_trans_min_amount', 0),
-                              'sales_percent_fbs': product.get('commissions', {}).get('sales_percent_fbs', 0),
-                              'price': float(product.get('price', {}).get('price', '0.0000')),
-                              'marketing_price': float(product.get('price', {}).get('marketing_price', '0.0000')),
-                              'marketing_seller_price': float(product.get('price', {}).get('marketing_seller_price', '0.0000')),
-                              'volume_weight': product.get('volume_weight', 0.0)
-                              }
-        for product in products
+        prod['offer_id']: {
+            'acquiring': prod.get('acquiring', 0),
+            'fbs_deliv_to_customer_amount': prod.get('commissions', {}).get('fbs_deliv_to_customer_amount', 0.0),
+            'fbs_direct_flow_trans_max_amount': prod.get('commissions', {}).get('fbs_direct_flow_trans_max_amount', 0),
+            'fbs_direct_flow_trans_min_amount': prod.get('commissions', {}).get('fbs_direct_flow_trans_min_amount', 0),
+            'fbs_first_mile_max_amount': prod.get('commissions', {}).get('fbs_first_mile_max_amount', 0),
+            'fbs_first_mile_min_amount': prod.get('commissions', {}).get('fbs_first_mile_min_amount', 0),
+            'fbs_return_flow_amount': prod.get('commissions', {}).get('fbs_return_flow_amount', 0),
+            'fbs_return_flow_trans_max_amount': prod.get('commissions', {}).get('fbs_return_flow_trans_max_amount', 0),
+            'fbs_return_flow_trans_min_amount': prod.get('commissions', {}).get('fbs_return_flow_trans_min_amount', 0),
+            'sales_percent_fbs': prod.get('commissions', {}).get('sales_percent_fbs', 0),
+            'price': float(prod.get('price', {}).get('price', '0.0000')),
+            'marketing_price': float(prod.get('price', {}).get('marketing_price', '0.0000')),
+            'marketing_seller_price': float(prod.get('price', {}).get('marketing_seller_price', '0.0000')),
+            'volume_weight': prod.get('volume_weight', 0.0)
+        }
+        for prod in products
     }
 
     oz_set = set(offers_commission_dict)
@@ -450,11 +461,9 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
 
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    get_ym_profitability('24-01-2025', '25-01-2025', plan_margin=28.0, fbs=True)
+    get_ym_profitability('30-01-2025', '31-01-2025', plan_margin=28.0, fbs=True)
     # oz = get_oz_profitability('24-01-2025', '24-01-2025', plan_margin=28.0)
     # print(oz)
-
-
     # data = get_wb_profitability('26-12-2024', '27-12-2024', plan_margin=28.0)
     # print(data)
 
@@ -468,4 +477,3 @@ if __name__ == '__main__':
     # ym_client = YaMarket(api_key=ym_token)
     # tree = ym_client.get_tree()
     # print(tree)
-

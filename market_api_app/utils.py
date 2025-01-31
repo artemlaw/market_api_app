@@ -11,7 +11,6 @@ def in_colab() -> bool | ModuleType:
         return False
 
 
-# TODO: Применить функцию для частичного получения ключей по потребности c опциями ms, wb, ym, ozon
 def get_api_keys(keys: list) -> tuple:
     """
     Получение ключей из userdata в colab либо из .env
@@ -23,60 +22,6 @@ def get_api_keys(keys: list) -> tuple:
     if not userdata:
         from dotenv import load_dotenv
         load_dotenv()
-    tokens = [userdata.get(key) if userdata else os.getenv(key) for key in keys]
-    return tuple(tokens)
-
-
-def get_api_tokens() -> (str, str, str, str, str):
-    try:
-        from google.colab import userdata
-        try:
-            MS_API_TOKEN = userdata.get("MS_API_TOKEN")
-            WB_API_TOKEN = userdata.get("WB_API_TOKEN")
-            YM_API_TOKEN = userdata.get("YM_API_TOKEN")
-            OZ_CLIENT_ID = userdata.get("OZ_CLIENT_ID")
-            OZ_API_TOKEN = userdata.get("OZ_API_TOKEN")
-            return MS_API_TOKEN, WB_API_TOKEN, YM_API_TOKEN, OZ_CLIENT_ID, OZ_API_TOKEN
-        except KeyError:
-            pass
-    except ImportError:
-        pass
-    from dotenv import load_dotenv
-
-    load_dotenv()
-    MS_API_TOKEN = os.getenv("MS_API_TOKEN")
-    WB_API_TOKEN = os.getenv("WB_API_TOKEN")
-    YM_API_TOKEN = os.getenv("YM_API_TOKEN")
-    OZ_CLIENT_ID = os.getenv("OZ_CLIENT_ID")
-    OZ_API_TOKEN = os.getenv("OZ_API_TOKEN")
-
-    return MS_API_TOKEN, WB_API_TOKEN, YM_API_TOKEN, OZ_CLIENT_ID, OZ_API_TOKEN
-
-
-def get_tokens_for_ozon() -> (str, str, str):
-    userdata = in_colab()
-    ms_token, oz_client_id, oz_token = (
-        userdata.get("MS_API_TOKEN"),
-        userdata.get("OZ_CLIENT_ID"),
-        userdata.get("OZ_API_TOKEN"),
-    ) if userdata else (os.getenv("MS_API_TOKEN"), os.getenv("OZ_CLIENT_ID"), os.getenv("OZ_API_TOKEN"))
-
-    return ms_token, oz_client_id, oz_token
-
-
-def get_tokens_for_wb() -> (str, str):
-    userdata = in_colab()
-    ms_token, wb_token = (userdata.get("MS_API_TOKEN"), userdata.get("WB_API_TOKEN")) if userdata else (
-        os.getenv("MS_API_TOKEN"),
-        os.getenv("WB_API_TOKEN"),
-    )
-
-    return ms_token, wb_token
-
-
-def get_tokens_for_ya() -> tuple:
-    userdata = in_colab()
-    keys = ["MS_API_TOKEN", "YM_API_TOKEN", "YA_FBS_CAMPAIGN_ID", "YA_EXPRESS_CAMPAIGN_ID", "YA_BUSINESS_ID"]
     tokens = [userdata.get(key) if userdata else os.getenv(key) for key in keys]
     return tuple(tokens)
 

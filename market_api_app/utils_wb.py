@@ -1,5 +1,6 @@
 import time
-from market_api_app import WB, get_date_for_request
+from market_api_app import WB
+from market_api_app.utils import get_date_for_request
 from market_api_app.utils_ms import get_attributes_dict, get_volume
 
 
