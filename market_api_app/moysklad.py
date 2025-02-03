@@ -119,3 +119,16 @@ class MoySklad(ApiBase):
         url = f'{self.host}entity/customerorder{filter_str}'
         params = {'limit': 100, 'offset': 0}
         return self.fetch_data(url, params)
+
+    def create_registration(self):
+        # TODO: Реализовать метод создания оприходования
+        url = f'{self.host}entity/enter'
+        data = {
+            "organization": {},
+            "store": {}
+        }
+        result = self.post(url, data=data)
+        response_json = result.json() if result else []
+        if not result:
+            logger.error('Не удалось создать Оприходование товара.')
+        return response_json
