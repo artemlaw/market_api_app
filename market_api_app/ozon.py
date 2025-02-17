@@ -28,20 +28,20 @@ class Ozon(ApiBase):
 
     def get_prices(self, product_id: list):
         logger.info(f"Получение данных по тарифам")
-        url = self.host + "v4/product/info/prices"
+        url = self.host + "v5/product/info/prices"
         data = {
+            "cursor": "",
             "filter": {
                 "product_id": product_id,
                 "visibility": "ALL"
             },
-            "last_id": "",
             "limit": 1000
         }
         result = self.post(url, data)
-        result_json = result.json() if result else {}
+        prices_json = result.json() if result else {}
         if not result:
             logger.error('Не удалось получить информацию по тарифам.')
-        return result_json.get("result", {}).get("items", [])
+        return prices_json.get("items", [])
 
     def get_products(self):
         logger.info(f"Получение данных по товарах")
