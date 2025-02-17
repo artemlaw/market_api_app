@@ -177,8 +177,8 @@ class MoySklad(ApiBase):
             logger.error('Не удалось получить позиции Оприходования.')
         return response_json
 
-    def create_positions_for_registration(self, registration_id: str, positions: list):
-        url = f'{self.host}entity/enter/{registration_id}/positions'
+    def create_positions_for_doc(self, doc_id: str, positions: list, doc_type='enter'):
+        url = f'{self.host}entity/{doc_type}/{doc_id}/positions'
         """
         position_id: str = 'b4c08c10-eaa2-11ee-0a80-0e22003e4340', price: float = 320000.0, quantity: float = 10.0
         position = {
@@ -200,7 +200,44 @@ class MoySklad(ApiBase):
         result = self.post(url, data=data)
         response_json = result.json() if result else []
         if not result:
-            logger.error('Не удалось создать позиции Оприходования.')
+            logger.error('Не удалось добавить позиции документа.')
         return response_json
 
-    # TODO: Добавить метод списания товара
+    def create_write_off(self, organization_id: str, store_id: str, project_id: str, name: str = 'A00001'):
+        url = f'{self.host}entity/loss'
+        data = {
+            'name': name,
+            'organization': {
+                'meta': {
+                    'href': f"https://api.moysklad.ru/api/remap/1.2/entity/organization/{organization_id}",
+                    'metadataHref': 'https://api.moysklad.ru/api/remap/1.2/entity/organization/metadata',
+                    'type': 'organization',
+                    'mediaType': 'application/json',
+                    'uuidHref': f'https://online.moysklad.ru/app/#mycompany/edit?id={organization_id}'
+                }
+            },
+            'project': {
+                'meta': {
+                    'href': f'https://api.moysklad.ru/api/remap/1.2/entity/project/{project_id}',
+                    'mediaType': 'application/json',
+                    'metadataHref': 'https://api.moysklad.ru/api/remap/1.2/entity/project/metadata',
+                    'type': 'project',
+                    'uuidHref': f'https://online.moysklad.ru/app/#project/edit?id={project_id}'
+                }
+            },
+            'store': {
+                'meta': {
+                    'href': f'https://api.moysklad.ru/api/remap/1.2/entity/store/{store_id}',
+                    'mediaType': 'application/json',
+                    'metadataHref': 'https://api.moysklad.ru/api/remap/1.2/entity/store/metadata',
+                    'type': 'store',
+                    'uuidHref': f'https://online.moysklad.ru/app/#warehouse/edit?id={store_id}'
+                }
+            }
+        }
+
+        result = self.post(url, data=data)
+        response_json = result.json() if result else []
+        if not result:
+            logger.error('Не удалось создать Списание товара.')
+        return response_json

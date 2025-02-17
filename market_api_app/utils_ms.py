@@ -1,5 +1,6 @@
 import logging
 import re
+from typing import Literal
 
 from market_api_app import MoySklad
 from market_api_app.utils import get_current_datetime
@@ -154,14 +155,14 @@ def get_sales_by_orders(orders: list) -> dict:
     return articles_quantities
 
 
-def create_receipt(ms_client: MoySklad, organization_id: str, store_id: str, project_id: str, positions: list) -> dict:
-    current_datetime = get_current_datetime('%Y-%m-%d%H%M%S')
-    prefix = 'AA'
-    name = f"{prefix}-{current_datetime}"
-    receipt = ms_client.create_registration(organization_id, store_id, project_id, name)
-    result = {}
-    receipt_id = receipt.get('id', '')
-    if receipt:
-        positions = positions
-        result = ms_client.create_positions_for_registration(receipt_id, positions)
-    return result
+def change_stock(ms_client: MoySklad, org_id: str, store_id: str, project_id: str, positions: list,
+                 change_type: Literal['add', 'remove'] = 'add') -> dict:
+    """
+    change_type: 'add' or 'remove'
+    """
+    doc_type = 'enter' if change_type == 'add' else 'loss'
+    prefix = 'O' if change_type == 'add' else 'S'
+    name = f"{prefix}-{get_current_datetime('%Y-%m-%d-%H%M%S')}"
+    doc = ms_client.create_registration(org_id, store_id, project_id, name) if change_type == 'add' \
+        else ms_client.create_write_off(org_id, store_id, project_id, name)
+    return ms_client.create_positions_for_doc(doc.get('id', ''), positions, doc_type=doc_type) if doc else {}
