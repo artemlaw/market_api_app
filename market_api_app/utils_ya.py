@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('YM Utils')
 
 # Константа можно вынести в перспективе в файл настроек модуля
-transit_warehouse_type = "MINI_SORTING_CENTER"  # Склад сортировки. Определяет стоимость обработки
+transit_warehouse_type = 'mini_sorting_center'  # Склад сортировки. Определяет стоимость обработки
 
 
 def get_all_ids(categories):
