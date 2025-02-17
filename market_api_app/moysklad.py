@@ -52,18 +52,18 @@ class MoySklad(ApiBase):
             logger.error('Не удалось обновить товар.')
         return response_json
 
-    def get_label(self, product_id, product_type='bundle', count=1):
+    def get_label(self, product_id, product_type='bundle', count=1,
+                  organization_id='29310743-0c62-11ef-0a80-1736000feae2'):
         url = f'{self.host}entity/{product_type}/{product_id}/export/'
         # Формируется на основе данных аккаунта
         data = {
-            "organization": {
-                "meta": {
-                    "href": "https://api.moysklad.ru/api/remap/1.2/entity/organization/"
-                            "29310743-0c62-11ef-0a80-1736000feae2",
-                    "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/organization/metadata",
-                    "type": "organization",
-                    "mediaType": "application/json",
-                    "uuidHref": "https://online.moysklad.ru/app/#mycompany/edit?id=29310743-0c62-11ef-0a80-1736000feae2"
+            'organization': {
+                'meta': {
+                    'href': f'https://api.moysklad.ru/api/remap/1.2/entity/organization/{organization_id}',
+                    'metadataHref': 'https://api.moysklad.ru/api/remap/1.2/entity/organization/metadata',
+                    'type': 'organization',
+                    'mediaType': 'application/json',
+                    'uuidHref': f'https://online.moysklad.ru/app/#mycompany/edit?id={organization_id}'
                 }
             },
             "count": count,
@@ -120,15 +120,87 @@ class MoySklad(ApiBase):
         params = {'limit': 100, 'offset': 0}
         return self.fetch_data(url, params)
 
-    def create_registration(self):
-        # TODO: Реализовать метод создания оприходования
+    def get_registration(self):
+        url = f'{self.host}entity/enter'
+        params = {'limit': 1000, 'offset': 0}
+        result = self.get(url, params)
+        response_json = result.json() if result else []
+        if not result:
+            logger.error('Не удалось получить данные о оприходовании.')
+        return response_json
+
+    def create_registration(self, organization_id: str, store_id: str, project_id: str, name: str = 'A00001'):
         url = f'{self.host}entity/enter'
         data = {
-            "organization": {},
-            "store": {}
+            'name': name,
+            'organization': {
+                'meta': {
+                    'href': f"https://api.moysklad.ru/api/remap/1.2/entity/organization/{organization_id}",
+                    'metadataHref': 'https://api.moysklad.ru/api/remap/1.2/entity/organization/metadata',
+                    'type': 'organization',
+                    'mediaType': 'application/json',
+                    'uuidHref': f'https://online.moysklad.ru/app/#mycompany/edit?id={organization_id}'
+                }
+            },
+            'project': {
+                'meta': {
+                    'href': f'https://api.moysklad.ru/api/remap/1.2/entity/project/{project_id}',
+                    'mediaType': 'application/json',
+                    'metadataHref': 'https://api.moysklad.ru/api/remap/1.2/entity/project/metadata',
+                    'type': 'project',
+                    'uuidHref': f'https://online.moysklad.ru/app/#project/edit?id={project_id}'
+                }
+            },
+            'store': {
+                'meta': {
+                    'href': f'https://api.moysklad.ru/api/remap/1.2/entity/store/{store_id}',
+                    'mediaType': 'application/json',
+                    'metadataHref': 'https://api.moysklad.ru/api/remap/1.2/entity/store/metadata',
+                    'type': 'store',
+                    'uuidHref': f'https://online.moysklad.ru/app/#warehouse/edit?id={store_id}'
+                }
+            }
         }
+
         result = self.post(url, data=data)
         response_json = result.json() if result else []
         if not result:
             logger.error('Не удалось создать Оприходование товара.')
         return response_json
+
+    def get_positions_for_registration(self, registration_id: str):
+        url = f'{self.host}entity/enter/{registration_id}/positions'
+
+        result = self.get(url)
+        response_json = result.json() if result else []
+        if not result:
+            logger.error('Не удалось получить позиции Оприходования.')
+        return response_json
+
+    def create_positions_for_registration(self, registration_id: str, positions: list):
+        url = f'{self.host}entity/enter/{registration_id}/positions'
+        """
+        position_id: str = 'b4c08c10-eaa2-11ee-0a80-0e22003e4340', price: float = 320000.0, quantity: float = 10.0
+        position = {
+            'assortment': {
+                'meta': {
+                    'href': f'https://api.moysklad.ru/api/remap/1.2/entity/product/{position_id}',
+                    'mediaType': 'application/json',
+                    'metadataHref': 'https://api.moysklad.ru/api/remap/1.2/entity/product/metadata',
+                    'type': 'product',
+                    'uuidHref': f'https://online.moysklad.ru/app/#good/edit?id={position_id}'
+                }
+            },
+            'price': price,
+            'quantity': quantity
+        }
+        """
+
+        data = positions
+        result = self.post(url, data=data)
+        response_json = result.json() if result else []
+        if not result:
+            logger.error('Не удалось создать позиции Оприходования.')
+        return response_json
+
+    # TODO: Добавить метод списания товара

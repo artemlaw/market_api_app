@@ -2,6 +2,7 @@ import logging
 import re
 
 from market_api_app import MoySklad
+from market_api_app.utils import get_current_datetime
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('MS Utils')
@@ -151,3 +152,16 @@ def get_sales_by_orders(orders: list) -> dict:
             else:
                 articles_quantities[article] = quantity
     return articles_quantities
+
+
+def create_receipt(ms_client: MoySklad, organization_id: str, store_id: str, project_id: str, positions: list) -> dict:
+    current_datetime = get_current_datetime('%Y-%m-%d%H%M%S')
+    prefix = 'AA'
+    name = f"{prefix}-{current_datetime}"
+    receipt = ms_client.create_registration(organization_id, store_id, project_id, name)
+    result = {}
+    receipt_id = receipt.get('id', '')
+    if receipt:
+        positions = positions
+        result = ms_client.create_positions_for_registration(receipt_id, positions)
+    return result

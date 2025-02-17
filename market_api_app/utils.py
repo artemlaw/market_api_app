@@ -77,6 +77,10 @@ def format_date(date_str: str) -> str:
     return datetime.strptime(date_str, '%Y-%m-%d').strftime('%d-%m-%Y')
 
 
+def get_current_datetime(str_format: str = '%Y-%m-%d %H:%M:%S') -> str:
+    return datetime.now().strftime(str_format)
+
+
 if __name__ == '__main__':
     # dates = get_date_for_request('2024-08-30', '2024-09-01')
     # print(dates)

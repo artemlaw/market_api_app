@@ -54,8 +54,8 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
     for offer in offers:
         offer_mapping = offer.get("mapping", {})
         if offer_mapping.get("marketCategoryId", 0) not in category_ids:
-            print('Неактуальная категория по товару',
-                  offer.get("offer", {}).get("offerId"), offer_mapping.get('marketCategoryName', ''))
+            print(offer.get("offer", {}).get("offerId"), '- неактуальная категория:',
+                  offer_mapping.get('marketCategoryName', ''))
             offer["mapping"]["marketCategoryId"] = 13793401  # 18% 'Шланги и комплекты для полива'
 
     dimensions = 0
