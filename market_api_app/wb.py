@@ -10,11 +10,12 @@ class WB(ApiBase):
     def __init__(self, api_key: str):
         super().__init__()
         self.headers = {'Authorization': api_key, 'Content-Type': 'application/json'}
-        self.host = 'https://marketplace-api.wildberries.ru/'
+        self.domain = 'wildberries.ru'
+        self.host = f'https://marketplace-api.{self.domain}/'
 
     def get_commission(self):
         logger.info(f'Получение комиссий по категориям')
-        url = 'https://common-api.wildberries.ru/api/v1/tariffs/commission'
+        url = f'https://common-api.{self.domain}/api/v1/tariffs/commission'
         result = self.get(url, {'locale': 'ru'})
         response_json = result.json() if result else []
         if not result:
@@ -23,7 +24,7 @@ class WB(ApiBase):
 
     def get_tariffs_for_box(self):
         logger.info(f'Получение данных логистики')
-        url = 'https://common-api.wildberries.ru/api/v1/tariffs/box'
+        url = f'https://common-api.{self.domain}/api/v1/tariffs/box'
         current_date = datetime.now().strftime('%Y-%m-%d')
         params = {'date': current_date}
         result = self.get(url, params)
@@ -34,7 +35,7 @@ class WB(ApiBase):
 
     def get_product_prices(self):
         print(f'Получение актуальных цен и дисконта')
-        url = 'https://discounts-prices-api.wb.ru/api/v2/list/goods/filter'
+        url = f'https://discounts-prices-api.{self.domain}/api/v2/list/goods/filter'
         params = {'limit': 1000, 'offset': 0}
 
         products_list = []
@@ -54,7 +55,7 @@ class WB(ApiBase):
         return products_list
 
     def get_orders(self, from_data):
-        url = 'https://statistics-api.wildberries.ru/api/v1/supplier/orders'
+        url = f'https://statistics-api.{self.domain}/api/v1/supplier/orders'
         params = {'dateFrom': from_data, 'flag': 1}
         result = self.get(url, params)
         response_json = result.json() if result else []

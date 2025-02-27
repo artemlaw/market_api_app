@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages
+from market_api_app import __version__
 
 setup(
     name='market_api_app',
-    version='0.1.7',
+    version=__version__,
     packages=find_packages(),
     install_requires=['requests', 'pandas', 'openpyxl'],
     extras_require={

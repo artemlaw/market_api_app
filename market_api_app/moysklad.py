@@ -111,6 +111,16 @@ class MoySklad(ApiBase):
             logger.error('Не удалось получить данные о наличии.')
         return response_json
 
+    def get_stock_by_store(self):
+        url = f'{self.host}report/stock/bystore/current'
+        # 'include': 'zeroLines' - показать товары с нулевым доступным остатком
+        params = {'stockType': 'quantity', 'include': 'zeroLines'}  # по умолчанию params = {'stockType': 'quantity'}
+        result = self.get(url, params)
+        response_json = result.json() if result else []
+        if not result:
+            logger.error('Не удалось получить данные о наличии.')
+        return response_json
+
     def get_orders(self, filter_str):
         # Пример:
         # from_date_f = f'{from_date} 00:00:00.000'
