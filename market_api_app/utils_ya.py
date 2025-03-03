@@ -56,7 +56,15 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
         if offer_mapping.get("marketCategoryId", 0) not in category_ids:
             print(offer.get("offer", {}).get("offerId"), '- неактуальная категория:',
                   offer_mapping.get('marketCategoryName', ''))
-            offer["mapping"]["marketCategoryId"] = 13793401  # 18% 'Шланги и комплекты для полива'
+            # 18% 'Шланги и комплекты для полива'
+            offer["mapping"] = {
+                'marketCategoryId': 13793401,
+                'marketCategoryName': 'Шаблонная категория, 18%',
+                'marketModelId': 100000000,
+                'marketModelName': 'Шаблонная категория, 18%',
+                'marketSku': 100000000000,
+                'marketSkuName': ''
+            }
 
     dimensions = 0
     offers_data = [
@@ -71,7 +79,7 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
         }
         for offer in offers
         if (offer_data := offer.get("offer", {}))
-        and (dimensions := offer_data.get("weightDimensions", {}))
+           and (dimensions := offer_data.get("weightDimensions", {}))
     ]
 
     offers_dict = {
@@ -148,8 +156,8 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
 
             elif tariff_type == "SORTING" and parameters:
                 if (
-                    get_value_by_name(parameters, "transitWarehouseType")
-                    == transit_warehouse_type
+                        get_value_by_name(parameters, "transitWarehouseType")
+                        == transit_warehouse_type
                 ):
                     tariff_values["SORTING"] = amount
 
@@ -282,6 +290,27 @@ def get_ya_data_for_article(article, article_data, plan_margin: float = 28.0):
 def get_ya_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 28.0):
     margin = round(plan_margin / 100, 3)
     article = order.get('article', '')
+    article_data = tariffs_dict.get(article, {})
+    if not article_data:
+        print(f'Артикул {article} - нет в группе ЯндексМаркет в базе МС, добавлен в отчет с нулевыми значениями')
+        return {
+            "order_number": order.get("order_number", ""),
+            "created": order.get("created", ""),
+            "quantity": order.get("quantity", 0.0),
+            "name": 'Нет данных в МС',
+            "article": article,
+            "stock": 0.0,
+            "price": 0.0,
+            "recommended_price": 0.0,
+            "prime_cost": 0.0,
+            "commission": 0.0,
+            "acquiring": 0.0,
+            "delivery": 0.0,
+            "crossregional_delivery": 0.0,
+            "sorting": 0.0,
+            "profit": 0.0,
+            "profitability": 0.0,
+        }
     article_data = tariffs_dict[article]
     price = order.get("price", 0.0)
     prime_cost = article_data.get("PRIME_COST", 0.0)
@@ -379,4 +408,3 @@ def get_ya_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
         "profit": profit,
         "profitability": profitability,
     }
-
