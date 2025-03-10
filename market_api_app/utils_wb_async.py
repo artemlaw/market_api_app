@@ -95,7 +95,7 @@ async def get_cards_async(nn_list: list, max_portion=100):
     return all_products
 
 
-async def run():
+async def get_wb_fbo_stock():
     update_data = []
     ms_token = get_api_keys(["MS_API_TOKEN"])[0]
     ms_client = MoySklad(api_key=ms_token)
@@ -140,6 +140,6 @@ if __name__ == '__main__':
     async def main():
         if platform.system() == 'Windows':
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        await run()
+        await get_wb_fbo_stock()
 
     asyncio.run(main())
