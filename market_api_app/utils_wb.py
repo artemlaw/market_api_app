@@ -30,7 +30,7 @@ def get_category_dict(wb_client: WB) -> dict:
 
 def get_price_dict(wb_client: WB) -> dict:
     product_prices = wb_client.get_product_prices()
-    # Если несколько размеров то берет максимальную цену и дисконт
+    # Если несколько размеров, то берет максимальную цену и дисконт
     price_dict = {d['nmID']: {
         'price': max(s['discountedPrice'] for s in d['sizes']),
         'discount': d['discount']
