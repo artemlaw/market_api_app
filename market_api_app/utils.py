@@ -1,9 +1,11 @@
 import os
 from datetime import datetime, timedelta
 from types import ModuleType
+from market_api_app.version import __version__
 
 
 def in_colab() -> bool | ModuleType:
+    print(f'Integration module v.{__version__}')
     try:
         from google.colab import userdata
         return userdata
