@@ -72,7 +72,7 @@ def calculate_recommended_price(prime_cost: float, logistics: float, plan_margin
 
 
 def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, category_dict: dict, logistic_dict: dict,
-                            plan_margin, acquiring: float = 1.5, fbs: bool = True) -> dict:
+                            plan_margin, acquiring: float = 1.5, fbs: bool = True, card_stocks: bool = False) -> dict:
     price = float(prices_dict.get('price', 0))
     discount = float(prices_dict.get('discount', 0))
     prime_cost = product.get('PRIME_COST', 0.0)
@@ -116,6 +116,25 @@ def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, catego
         'profit': profit,
         'profitability': profitability
     }
+    if card_stocks:
+        data = {
+            'name': product.get('NAME', ''),
+            'article': product.get('ARTICLE', ''),
+            'nm_id': nm_id,
+            'url': f'https://www.wildberries.ru/catalog/{nm_id}/detail.aspx',
+            'stock': product.get('STOCK', 0.0),
+            'stock_fbs': product.get('STOCK_FBS', 0),
+            'stock_fbo': product.get('STOCK_FBO', 0),
+            'discount': discount,
+            'price': price,
+            'recommended_price': recommended_price,
+            'prime_cost': prime_cost,
+            'commission': commission_cost,
+            'acquiring': acquiring_cost,
+            'logistics': logistics,
+            'profit': profit,
+            'profitability': profitability
+        }
 
     return data
 

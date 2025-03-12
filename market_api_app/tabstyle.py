@@ -56,8 +56,12 @@ class ExcelStyle:
             cell_font=None,
             cell_fill=None,
             cell_border=None,
+            columns_to_align_right=None,
     ):
 
+        if columns_to_align_right is None:
+            columns_to_align_right = [7, 8, 9, 10, 11, 12, 13]
+        self.columns_to_align_right = columns_to_align_right
         self.border_side = Side(border_style="thin", color="C5B775")
 
         self.header_style = NamedStyle(name="header_style")
@@ -112,7 +116,7 @@ class ExcelStyle:
 
         self.apply_to_workbook(workbook)
 
-        columns_to_align_right = [7, 8, 9, 10, 11, 12, 13]
+        # columns_to_align_right = [6, 7, 8, 9, 10, 11, 12, 13]
 
         for col_idx, column in enumerate(df.columns, start=1):
             cell = sheet.cell(row=1, column=col_idx, value=column)
@@ -123,7 +127,7 @@ class ExcelStyle:
                 cell = sheet.cell(row=row_idx, column=col_idx, value=value)
                 cell.style = self.cell_style
 
-                if col_idx in columns_to_align_right:
+                if col_idx in self.columns_to_align_right:
                     cell.alignment = tab_styles.columns_to_align_right
                     cell.number_format = (
                         "#,##0.0"  # Формат с одним знаком после запятой

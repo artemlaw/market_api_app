@@ -113,7 +113,70 @@ def get_ms_products(client: MoySklad, project: str = 'ЯндексМаркет')
     }
 
 
-def get_ms_products_for_wb(client: MoySklad) -> dict:
+def get_stocks_info(sizes):
+    fbs_stock = 0
+    fbo_stock = 0
+
+    for size in sizes:
+        stocks = size.get('stocks')
+        for stock in stocks:
+            wh_id = stock.get('wh')
+            if wh_id == 119261:
+                fbs_stock += stock.get('qty')
+            else:
+                fbo_stock += stock.get('qty')
+
+    return fbs_stock, fbo_stock
+
+
+def get_cards_details(client: MoySklad, nm_ids: str) -> list:
+    """Получение данных корзины"""
+    url = 'https://card.wb.ru/cards/v2/detail'
+    headers = {
+        'Accept': '*/*',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Connection': 'keep-alive',
+        'sec-ch-ua': '"Chromium";v="134", "Google Chrome";v="134", "Not:A-Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/134.0.0.0 Safari/537.36'
+    }
+    params = {
+        'curr': 'rub',
+        'dest': '-1257786',
+        'appType': '1',
+        'spp': '30',
+        'nm': nm_ids,
+    }
+    client.headers = headers
+    result = client.get(url=url, params=params)
+    response_json = result.json() if result else []
+    if not result:
+        print('Не удалось получить данные по корзине.')
+    return response_json.get('data', {}).get('products', [])
+
+
+def get_cards(client: MoySklad, nn_list: list, max_portion=100):
+    results = []
+    for i in range(0, len(nn_list), max_portion):
+        portion = ';'.join(map(str, nn_list[i:i + max_portion]))
+        result = get_cards_details(client, portion)
+        if result:
+            results.extend(result)
+    return results
+
+
+def get_cards_stocks(client: MoySklad, nn_list: list):
+    print("WB: Получение остатка из корзины")
+    cards = get_cards(client, [int(product['code']) for product in nn_list])
+    if not cards:
+        print('Не удалось получить данные по корзине.')
+        return {}
+    return {str(card['id']): get_stocks_info(card['sizes']) for card in cards}
+
+
+def get_ms_products_for_wb(client: MoySklad, fbo_stock: bool = False) -> dict:
     """
     Получение товаров по 'WB'
     """
@@ -126,11 +189,18 @@ def get_ms_products_for_wb(client: MoySklad) -> dict:
     print("Мой склад: Получение остатка по товарам")
     stocks = client.get_stock()
     ms_stocks = {stock["assortmentId"]: stock["quantity"] for stock in stocks}
+    stock_from_basket = {}
+    if fbo_stock:
+        # Получить остаток FBO из корзины
+        stock_from_basket = get_cards_stocks(client, products_for_project)
+
     print("Мой склад: Получение себестоимости товара")
 
     return {
         int(product_['code']): {
             "STOCK": get_stock_for_bundle(ms_stocks, product_),
+            "STOCK_FBS": stock_from_basket.get(product_['code'], (0, 0))[0] if stock_from_basket else 0,
+            "STOCK_FBO": stock_from_basket.get(product_['code'], (0, 0))[1] if stock_from_basket else 0,
             "PRIME_COST": get_prime_cost(product_.get('salePrices', []), 'Цена основная'),
             "NAME": product_['name'],
             "ARTICLE": product_.get('article', ''),

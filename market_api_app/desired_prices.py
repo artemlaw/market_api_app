@@ -399,20 +399,18 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
 
     ms_client = MoySklad(api_key=ms_token)
     # Получаем номенклатуру из МС только WB
-    ms_wb_products = get_ms_products_for_wb(ms_client)
-
+    fbo = not fbs
+    ms_wb_products = get_ms_products_for_wb(ms_client, fbo)
     data_for_report = [
         get_wb_data_for_article(nm_id, ms_wb_products[nm_id], wb_prices_dict[nm_id], category_dict, logistic_dict,
-                                plan_margin, acquiring, fbs)
+                                plan_margin, acquiring, fbs, fbo)
         for nm_id in ms_wb_products if nm_id in wb_prices_dict
     ]
     print('Формирую отчет "Рекомендуемые цены"')
     pd.set_option("display.max_columns", None)
     pd.set_option("display.max_rows", None)
     df = pd.DataFrame(data_for_report)
-    df_total = (
-        df.agg(
-            {
+    data_total = {
                 "stock": "sum",
                 "price": "sum",
                 "recommended_price": "sum",
@@ -421,7 +419,24 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
                 "acquiring": "sum",
                 "logistics": "sum",
                 "profit": "sum",
-            }
+    }
+    if fbo:
+        data_total["stock_fbs"] = "sum"
+        data_total["stock_fbo"] = "sum"
+
+    df_total = (
+        df.agg(
+            data_total
+            # {
+            #     "stock": "sum",
+            #     "price": "sum",
+            #     "recommended_price": "sum",
+            #     "prime_cost": "sum",
+            #     "commission": "sum",
+            #     "acquiring": "sum",
+            #     "logistics": "sum",
+            #     "profit": "sum",
+            # }
         )
         .to_frame()
         .T
@@ -434,8 +449,7 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
     df_total["profitability"] = round((df_total["profit"] / df_total["price"]) * 100, 1)
 
     df = pd.concat([df, df_total], ignore_index=True)
-
-    df.columns = [
+    columns = [
         "Номенклатура",
         "Артикул",
         "NmId",
@@ -451,9 +465,31 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
         "Прибыль",
         "Рентабельность",
     ]
+    if fbo:
+        columns = [
+            "Номенклатура",
+            "Артикул",
+            "NmId",
+            "Ссылка",
+            "Остаток",
+            "FBS остаток в корзине",
+            "FBO остаток в корзине",
+            "Дисконт, %",
+            "Текущая цена",
+            "Рекомендуемая цена",
+            "Себестоимость",
+            "Комиссия",
+            "Эквайринг",
+            "Логистика",
+            "Прибыль",
+            "Рентабельность",
+        ]
+
+    df.columns = columns
     # print(df)
     path_xls_file = f'wb_{"fbs" if fbs else "fbo"}_рекомендуемые_цены.xlsx'
-    style = ExcelStyle()
+    columns_to_align_right = [9, 10, 11, 12, 13] if fbo else [7, 8, 9, 10, 11, 12]
+    style = ExcelStyle(columns_to_align_right=columns_to_align_right)
     style.style_dataframe(df, path_xls_file, "Номенклатура WB")
     print("Файл отчета готов")
     return path_xls_file
@@ -461,14 +497,14 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
 
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    get_ym_profitability('03-03-2025', '03-03-2025', plan_margin=28.0, fbs=True)
+    # get_ym_profitability('03-03-2025', '03-03-2025', plan_margin=28.0, fbs=True)
     # oz = get_oz_profitability('17-02-2025', '17-02-2025', plan_margin=28.0)
     # print(oz)
     # data = get_wb_profitability('26-12-2024', '27-12-2024', plan_margin=28.0)
     # print(data)
 
-    # wb = get_wb_desired_prices(plan_margin=28.0)
-    # print(wb)
+    wb = get_wb_desired_prices(plan_margin=28.0, fbs=False)
+    print(wb)
 
     # campaign_id_key = "YA_FBS_CAMPAIGN_ID"
     # ms_token, ym_token, business_id, campaign_id = get_api_keys(["MS_API_TOKEN", "YM_API_TOKEN", "YA_BUSINESS_ID",
