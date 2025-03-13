@@ -2,7 +2,8 @@ import pandas as pd
 from market_api_app import MoySklad, YaMarket, Ozon, WB, ExcelStyle, get_api_keys
 from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb
 from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order
-from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article
+from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article, \
+    wb_get_orders, get_order_data
 from market_api_app.utils_ya import get_category_ids, chunked_offers_list, get_dict_for_commission, \
     get_ya_data_for_article, get_ym_orders, get_ya_data_for_order
 
@@ -376,14 +377,135 @@ def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     return path_xls_file
 
 
-def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0):
+def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0, acquiring: float = 1.6,
+                         one_fbs: bool = False):
     ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
+    wb_client = WB(api_key=wb_token)
+    orders_fbs, orders_fbo, nm_ids_fbs, nm_ids_fbo = wb_get_orders(wb_client, from_date, to_date)
+    nm_ids_list = list(nm_ids_fbs & nm_ids_fbo) if one_fbs else list(nm_ids_fbo)
 
     ms_client = MoySklad(ms_token)
-    ms_products = get_ms_products_for_wb(ms_client)
-    print(from_date, to_date, plan_margin)
-    # TODO: Продолжить доработку отчета "Рентабельность заказов WB" описав функцию get_wb_profitability
-    return ms_products
+    ms_products_with_stocks = get_ms_products_for_wb(ms_client, one_fbs, nm_ids_list)
+
+    tariffs_data = wb_client.get_tariffs_for_box()
+    category_dict = get_category_dict(wb_client)
+    wb_prices_dict = get_price_dict(wb_client)
+
+    base_dict = {
+        'tariffs_data': tariffs_data,
+        'category_dict': category_dict,
+        'wb_prices_dict': wb_prices_dict
+    }
+
+    if one_fbs:
+        orders_fbs = []
+
+    # data_for_report = [
+    #     get_order_data(
+    #         order,
+    #         ms_products_with_stocks[order.get('nmId')],
+    #         base_dict,
+    #         plan_margin=plan_margin,
+    #         acquiring=acquiring,
+    #         fbs=is_fbs
+    #     )
+    #     for orders, is_fbs in [(orders_fbo, False), (orders_fbs, True)]
+    #     for order in orders
+    #     if order.get('nmId') in nm_ids_list
+    # ]
+
+    data_for_report = []
+    not_in_ms = []
+    for orders, is_fbs in [(orders_fbo, False), (orders_fbs, True)]:
+        for order in orders:
+            if order.get('nmId') in nm_ids_list:
+                data_for_report.append(
+                    get_order_data(
+                        order,
+                        ms_products_with_stocks[order.get('nmId')],
+                        base_dict,
+                        plan_margin=plan_margin,
+                        acquiring=acquiring,
+                        fbs=is_fbs
+                    )
+                )
+            else:
+                not_in_ms.append(order.get('nmId'))
+
+    if not_in_ms:
+        print('Количество заказов не вошедших в отчет: ', len(not_in_ms))
+        print('Список товаров по которым нет данных в МС, либо код товара в МС не соответствует WB:')
+        not_in_ms_set = set(not_in_ms)
+        print(", ".join(map(str, not_in_ms_set)))
+
+    print('Формирую отчет "Рентабельность заказов WB"')
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+    df = pd.DataFrame(data_for_report)
+    df_total = (
+        df.agg(
+            {
+                "stock": "sum",
+                "stock_fbs": "sum",
+                "stock_fbo": "sum",
+                "quantity": "sum",
+                "price": "sum",
+                "order_price": "sum",
+                "recommended_price": "sum",
+                "prime_cost": "sum",
+                "commission": "sum",
+                "acquiring": "sum",
+                "logistics": "sum",
+                "profit": "sum",
+                "order_profit": "sum",
+
+            }
+        )
+        .to_frame()
+        .T
+    )
+    df_total["name"] = ""
+    df_total["url"] = ""
+    df_total["nm_id"] = ""
+    df_total["article"] = ""
+    df_total["order_create"] = ""
+    df_total["order_name"] = ""
+    df_total["discount"] = ""
+    df_total["profitability"] = round((df_total["profit"] / df_total["price"]) * 100, 1)
+    df_total["order_profitability"] = round((df_total["order_profit"] / df_total["order_price"]) * 100, 1)
+
+    df = pd.concat([df, df_total], ignore_index=True)
+    df.columns = [
+        "Номенклатура",
+        "Артикул",
+        "NmId",
+        "Ссылка",
+        "Остаток",
+        "FBS остаток в корзине",
+        "FBO остаток в корзине",
+        "Дата заказа",
+        "Номер заказа",
+        "Количество",
+        "Дисконт, %",
+        "Текущая цена",
+        "Цена заказа",
+        "Рекомендуемая цена",
+        "Себестоимость",
+        "Комиссия",
+        "Эквайринг",
+        "Логистика",
+        "Прибыль",
+        "Рентабельность",
+        "Прибыль по заказу",
+        "Рентабельность по заказу",
+    ]
+    # print(df)
+    path_xls_file = 'wb_рентабельность_по_заказам.xlsx'
+    columns_to_align_right = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    style = ExcelStyle(columns_to_align_right=columns_to_align_right)
+    style.style_dataframe(df, path_xls_file, "Заказы WB")
+    print("Файл отчета готов")
+    return path_xls_file
 
 
 def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs: bool = True):
@@ -411,14 +533,14 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
     pd.set_option("display.max_rows", None)
     df = pd.DataFrame(data_for_report)
     data_total = {
-                "stock": "sum",
-                "price": "sum",
-                "recommended_price": "sum",
-                "prime_cost": "sum",
-                "commission": "sum",
-                "acquiring": "sum",
-                "logistics": "sum",
-                "profit": "sum",
+        "stock": "sum",
+        "price": "sum",
+        "recommended_price": "sum",
+        "prime_cost": "sum",
+        "commission": "sum",
+        "acquiring": "sum",
+        "logistics": "sum",
+        "profit": "sum",
     }
     if fbo:
         data_total["stock_fbs"] = "sum"
@@ -427,16 +549,6 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
     df_total = (
         df.agg(
             data_total
-            # {
-            #     "stock": "sum",
-            #     "price": "sum",
-            #     "recommended_price": "sum",
-            #     "prime_cost": "sum",
-            #     "commission": "sum",
-            #     "acquiring": "sum",
-            #     "logistics": "sum",
-            #     "profit": "sum",
-            # }
         )
         .to_frame()
         .T
@@ -500,11 +612,12 @@ if __name__ == '__main__':
     # get_ym_profitability('03-03-2025', '03-03-2025', plan_margin=28.0, fbs=True)
     # oz = get_oz_profitability('17-02-2025', '17-02-2025', plan_margin=28.0)
     # print(oz)
-    # data = get_wb_profitability('26-12-2024', '27-12-2024', plan_margin=28.0)
-    # print(data)
+    wb_orders = get_wb_profitability('2025-03-13', '2025-03-13', plan_margin=28.0, acquiring=1.6,
+                                     one_fbs=True)
+    print(wb_orders)
 
-    wb = get_wb_desired_prices(plan_margin=28.0, fbs=False)
-    print(wb)
+    # wb = get_wb_desired_prices(plan_margin=28.0, fbs=False)
+    # print(wb)
 
     # campaign_id_key = "YA_FBS_CAMPAIGN_ID"
     # ms_token, ym_token, business_id, campaign_id = get_api_keys(["MS_API_TOKEN", "YM_API_TOKEN", "YA_BUSINESS_ID",

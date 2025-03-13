@@ -1,7 +1,6 @@
 import time
 from market_api_app import WB
 from market_api_app.utils import get_date_for_request
-from market_api_app.utils_ms import get_attributes_dict, get_volume
 
 
 def find_warehouse_by_name(warehouses: list, name: str) -> dict | None:
@@ -139,7 +138,7 @@ def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, catego
     return data
 
 
-def get_order_data(order: dict, product: dict, base_dict: dict, acquiring: float = 1.5, fbs: bool = True) -> dict:
+def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: float, acquiring: float = 1.5, fbs: bool = True) -> dict:
     wb_prices_dict = base_dict['wb_prices_dict']
     if fbs:
         logistic_dict = get_logistic_dict(base_dict['tariffs_data'], warehouse_name='Маркетплейс')
@@ -148,37 +147,20 @@ def get_order_data(order: dict, product: dict, base_dict: dict, acquiring: float
                                           warehouse_name=order.get('warehouseName', 'Коледино'))
 
     nm_id = order.get('nmId', '')
-    sale_prices = product.get('salePrices', [])
-    prices_dict = create_prices_dict(sale_prices)
-
     # Получение цены
-    price = wb_prices_dict.get(nm_id, {}).get('price')
+    price = float(wb_prices_dict.get(nm_id, {}).get('price', 0.0))
     if not price:
-        price = prices_dict.get('Цена WB после скидки', 0) / 100
+        price = round(order.get('finishedPrice', 0.0), 1)
 
     # Получение скидки
-    discount = wb_prices_dict.get(nm_id, {}).get('discount')
+    discount = float(wb_prices_dict.get(nm_id, {}).get('discount', 0))
     if not discount:
-        price_before_discount = prices_dict.get('Цена WB до скидки', 0.0)
-        price_after_discount = prices_dict.get('Цена WB после скидки', 0.0)
-        if price_before_discount:
-            discount = (1 - round(price_after_discount / price_before_discount, 1)) * 100
-        else:
-            discount = 0
-
-    cost_price_c = prices_dict.get('Цена основная', 0.0)
-    cost_price = cost_price_c / 100
+        discount = order.get('discountPercent', 0)
+    # Себестоимость
+    prime_cost = product.get('PRIME_COST', 0.0)
     order_price = round(order.get('finishedPrice', 0.0), 1)
 
-    attributes = product.get('attributes', [])
-    attributes_dict = get_attributes_dict(attributes)
-    volume = get_volume(attributes_dict)
-
-    logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
-                              logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
-
-    category = order.get('subject', attributes_dict["Категория товара"])
-
+    category = product.get('CATEGORY', '')
     commissions = base_dict.get('category_dict', {}).get(category)
     if not commissions:
         print('Не удалось определить комиссию по категории', category, 'по умолчанию указал 30%')
@@ -186,41 +168,49 @@ def get_order_data(order: dict, product: dict, base_dict: dict, acquiring: float
     else:
         commission = commissions[0] if fbs else commissions[1]
 
+    volume = product.get('VOLUME', 0.0)
+    logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
+                              logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
+
     commission_cost = round(commission / 100 * price, 1)
     acquiring_cost = round(acquiring / 100 * price, 1)
 
     reward = round(commission_cost + acquiring_cost + logistics, 1)
-    profit = round(price - cost_price - reward, 1)
+    profit = round(price - prime_cost - reward, 1)
     profitability = round(profit / price * 100, 1)
+
+    recommended_price = calculate_recommended_price(prime_cost, logistics, plan_margin, commission, acquiring)
 
     order_commission_cost = round(commission / 100 * order_price, 1)
     order_acquiring_cost = round(acquiring / 100 * order_price, 1)
 
     order_reward = round(order_commission_cost + order_acquiring_cost + logistics, 1)
-    order_profit = round(order_price - cost_price - order_reward, 1)
+    order_profit = round(order_price - prime_cost - order_reward, 1)
     order_profitability = round(order_profit / order_price * 100, 1)
 
     model = 'FBS_' if fbs else 'FBO_'
 
     data = {
-        'name': product.get('name', ''),
+        'name': product.get('NAME', ''),
+        'article': product.get('ARTICLE', ''),
         'nm_id': nm_id,
-        'article': product.get('article', ''),
-        'stock': base_dict.get('ms_stocks_dict', {}).get(nm_id, 0),
+        'url': f'https://www.wildberries.ru/catalog/{nm_id}/detail.aspx',
+        'stock': product.get('STOCK', 0.0),
+        'stock_fbs': product.get('STOCK_FBS', 0),
+        'stock_fbo': product.get('STOCK_FBO', 0),
         'order_create': order.get('date', ''),
         'order_name': model + order.get('sticker', '0'),
         'quantity': 1,
         'discount': discount,
-        'item_price': price,
+        'price': price,
         'order_price': order_price,
-        'cost_price': cost_price,
+        'recommended_price': recommended_price,
+        'prime_cost': prime_cost,
         'commission': commission_cost,
         'acquiring': acquiring_cost,
         'logistics': logistics,
-        'reward': reward,
         'profit': profit,
         'profitability': profitability,
-        'order_reward': order_reward,
         'order_profit': order_profit,
         'order_profitability': order_profitability
     }
@@ -245,6 +235,8 @@ def wb_get_orders(wb_client: WB, start_of_day: str, end_of_day: str):
     orders_fbo_cancel = []
     orders_fbs = []
     orders_fbo = []
+    nm_ids_fbs = []
+    nm_ids_fbo = []
 
     for order in wb_orders:
         srid = order.get('srid')
@@ -254,8 +246,10 @@ def wb_get_orders(wb_client: WB, start_of_day: str, end_of_day: str):
         if order_type == 'Клиентский' and not is_cancel:
             if order.get('srid') in rids:
                 orders_fbs.append(order)
+                nm_ids_fbs.append(order.get('nmId'))
             else:
                 orders_fbo.append(order)
+                nm_ids_fbo.append(order.get('nmId'))
         else:
             if srid in rids:
                 orders_fbs_cancel.append(order)
@@ -272,4 +266,4 @@ def wb_get_orders(wb_client: WB, start_of_day: str, end_of_day: str):
     print(f"{'Всего заказов':<15}{len(wb_orders):<10}")
     print(f"{'Без отмены':<15}{len(wb_orders) - len(orders_fbs_cancel) - len(orders_fbo_cancel):<10}")
 
-    return orders_fbs, orders_fbo
+    return orders_fbs, orders_fbo, set(nm_ids_fbs), set(nm_ids_fbo)

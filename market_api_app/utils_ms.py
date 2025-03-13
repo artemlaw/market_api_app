@@ -176,16 +176,19 @@ def get_cards_stocks(client: MoySklad, nn_list: list):
     return {str(card['id']): get_stocks_info(card['sizes']) for card in cards}
 
 
-def get_ms_products_for_wb(client: MoySklad, fbo_stock: bool = False) -> dict:
+def get_ms_products_for_wb(client: MoySklad, fbo_stock: bool = False, limiter_list: list = None) -> dict:
     """
     Получение товаров по 'WB'
     """
     ms_products = client.get_bundles()
     print('Мой склад: Получение товаров')
+    # Отбираем по лимитеру если есть
+    if limiter_list:
+        products_for_project = [product for product in ms_products if int(product['code']) in limiter_list]
     # Отбираем только по проекту
-    products_for_project = [
-        product for product in ms_products if product.get('pathName', '') == 'WB'
-    ]
+    else:
+        products_for_project = [product for product in ms_products if product.get('pathName', '') == 'WB']
+
     print("Мой склад: Получение остатка по товарам")
     stocks = client.get_stock()
     ms_stocks = {stock["assortmentId"]: stock["quantity"] for stock in stocks}
