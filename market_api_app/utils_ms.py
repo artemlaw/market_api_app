@@ -18,7 +18,7 @@ def get_product_id_from_url(url: str) -> str | None:
         return None
 
 
-def get_stock_for_bundle(stocks_dict: dict, product: list) -> float:
+def get_stock_for_bundle(stocks_dict: dict, product: dict) -> float:
     product_bundles = product['components']['rows']
     product_stock = 0.0
     for bundle in product_bundles:
@@ -113,7 +113,7 @@ def get_ms_products(client: MoySklad, project: str = 'ЯндексМаркет')
     }
 
 
-def get_stocks_info(sizes):
+def get_stocks_info(sizes: list) -> tuple:
     fbs_stock = 0
     fbo_stock = 0
 
@@ -157,7 +157,7 @@ def get_cards_details(client: MoySklad, nm_ids: str) -> list:
     return response_json.get('data', {}).get('products', [])
 
 
-def get_cards(client: MoySklad, nn_list: list, max_portion=100):
+def get_cards(client: MoySklad, nn_list: list, max_portion: int = 100) -> list:
     results = []
     for i in range(0, len(nn_list), max_portion):
         portion = ';'.join(map(str, nn_list[i:i + max_portion]))

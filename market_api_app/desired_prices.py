@@ -382,7 +382,7 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
     wb_client = WB(api_key=wb_token)
     orders_fbs, orders_fbo, nm_ids_fbs, nm_ids_fbo = wb_get_orders(wb_client, from_date, to_date)
-    nm_ids_list = list(nm_ids_fbs & nm_ids_fbo) if one_fbs else list(nm_ids_fbo)
+    nm_ids_list = list(nm_ids_fbo) if one_fbs else list(nm_ids_fbs | nm_ids_fbo)
 
     ms_client = MoySklad(ms_token)
     ms_products_with_stocks = get_ms_products_for_wb(ms_client, one_fbs, nm_ids_list)
