@@ -400,20 +400,6 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     if one_fbs:
         orders_fbs = []
 
-    # data_for_report = [
-    #     get_order_data(
-    #         order,
-    #         ms_products_with_stocks[order.get('nmId')],
-    #         base_dict,
-    #         plan_margin=plan_margin,
-    #         acquiring=acquiring,
-    #         fbs=is_fbs
-    #     )
-    #     for orders, is_fbs in [(orders_fbo, False), (orders_fbs, True)]
-    #     for order in orders
-    #     if order.get('nmId') in nm_ids_list
-    # ]
-
     data_for_report = []
     not_in_ms = []
     for orders, is_fbs in [(orders_fbo, False), (orders_fbs, True)]:
@@ -474,8 +460,8 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     df_total["profitability"] = round((df_total["profit"] / df_total["price"]) * 100, 1)
     df_total["order_profitability"] = round((df_total["order_profit"] / df_total["order_price"]) * 100, 1)
 
-    df = pd.concat([df, df_total], ignore_index=True)
-    df.columns = [
+    df_ = pd.concat([df, df_total], ignore_index=True)
+    df_.columns = [
         "Номенклатура",
         "Артикул",
         "NmId",
@@ -503,7 +489,27 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     path_xls_file = 'wb_рентабельность_по_заказам.xlsx'
     columns_to_align_right = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
     style = ExcelStyle(columns_to_align_right=columns_to_align_right)
-    style.style_dataframe(df, path_xls_file, "Заказы WB")
+    style.style_dataframe(df_, path_xls_file, "Заказы WB")
+
+    df_group = ((
+        df.groupby(['name', 'nm_id', 'article'])[
+            ["stock", "stock_fbs", "stock_fbo", "quantity"]
+        ].agg({
+            "stock": "max",
+            "stock_fbs": "sum",
+            "stock_fbo": "sum",
+            "quantity": "sum"
+        }).reset_index()
+    ).rename(columns={
+        'name': 'Номенклатура',
+        'article': 'Артикул',
+        'nm_id': 'NmId',
+        'stock': 'Остаток',
+        'stock_fbs': 'FBS остаток в корзине',
+        'stock_fbo': 'FBO остаток в корзине',
+        'quantity': 'Продажи'})
+    )
+    style.style_dataframe(df_group, path_xls_file, sheet_title="Сводный", active_sheet=False)
     print("Файл отчета готов")
     return path_xls_file
 

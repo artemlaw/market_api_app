@@ -101,22 +101,28 @@ class ExcelStyle:
             column_widths if column_widths else {"A": 30, "B": 18, "C": 10}
         )
 
+        self.workbook = Workbook()
+
     def apply_to_workbook(self, workbook: Workbook):
         if "header_style" not in workbook.style_names:
             workbook.add_named_style(self.header_style)
         if "cell_style" not in workbook.style_names:
             workbook.add_named_style(self.cell_style)
 
-    def style_dataframe(self, df: pd.DataFrame, file_path: str, sheet_title: str):
-        workbook = Workbook()
-        sheet = workbook.active
-        sheet.title = sheet_title
+    def style_dataframe(self, df: pd.DataFrame, file_path: str, sheet_title: str, active_sheet: bool = True):
+        # workbook = Workbook()
+        if active_sheet:
+            sheet = self.workbook.active
+            sheet.title = sheet_title
+        else:
+            sheet = self.workbook.create_sheet(sheet_title)
+
         sheet.sheet_format.defaultColWidth = 15
         # Установите ширину для определенных столбцов
         for col, width in self.column_widths.items():
             sheet.column_dimensions[col].width = width
 
-        self.apply_to_workbook(workbook)
+        self.apply_to_workbook(self.workbook)
 
         for col_idx, column in enumerate(df.columns, start=1):
             cell = sheet.cell(row=1, column=col_idx, value=column)
@@ -134,4 +140,4 @@ class ExcelStyle:
                     )
 
         sheet.auto_filter.ref = sheet.dimensions
-        workbook.save(file_path)
+        self.workbook.save(file_path)
