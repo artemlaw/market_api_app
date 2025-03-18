@@ -157,6 +157,58 @@ def get_cards_details(client: MoySklad, nm_ids: str) -> list:
     return response_json.get('data', {}).get('products', [])
 
 
+def get_warehouses(client: MoySklad) -> list:
+    """Получение данных о складах"""
+    url = 'https://static-basket-01.wb.ru/vol0/data/stores-data.json'
+    headers = {
+        'Accept': '*/*',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Connection': 'keep-alive',
+        'sec-ch-ua': '"Chromium";v="134", "Google Chrome";v="134", "Not:A-Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/134.0.0.0 Safari/537.36'
+    }
+    client.headers = headers
+    result = client.get(url=url)
+    response_json = result.json() if result else []
+    if not result:
+        print('Не удалось получить данные по корзине.')
+    return response_json
+
+
+def get_stocks_by_size(sizes: list, wh: dict) -> tuple:
+    fbs_stock = 0
+    fbo_stock = 0
+    stock_list = []
+
+    for size in sizes:
+        stocks = size.get('stocks')
+        for stock in stocks:
+            wh_id = stock.get('wh')
+            if wh_id == 119261:
+                fbs_stock += stock.get('qty')
+                stock_list.append({'FBS': stock.get('qty')})
+            else:
+                fbo_stock += stock.get('qty')
+                stock_list.append({wh.get(wh_id, {}).get('name', 'FBO'): stock.get('qty')})
+
+    return fbs_stock, fbo_stock, stock_list
+
+
+def get_stocks_wh(client: MoySklad, nm_list: list) -> dict:
+    cards = get_cards(client, nm_list)
+    offices = get_warehouses(client)
+    warehouses = {warehouse['id']: warehouse for warehouse in offices}
+
+    print(cards[0]['sizes'])
+    if not cards:
+        print('Не удалось получить данные по корзине.')
+        return {}
+    return {str(card['id']): get_stocks_by_size(card['sizes'], warehouses) for card in cards}
+
+
 def get_cards(client: MoySklad, nn_list: list, max_portion: int = 100) -> list:
     results = []
     for i in range(0, len(nn_list), max_portion):

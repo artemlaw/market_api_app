@@ -87,3 +87,11 @@ class WB(ApiBase):
                 logger.error('Не удалось получить данные о заказах FBS.')
                 break
         return orders_fbs
+
+    def get_offices(self):
+        url = f'https://marketplace-api.{self.domain}/api/v3/offices'
+        result = self.get(url)
+        response_json = result.json() if result else []
+        if not result:
+            logger.error('Не удалось получить данные о складах.')
+        return response_json

@@ -1,6 +1,8 @@
 import pandas as pd
 from market_api_app import MoySklad, YaMarket, Ozon, WB, ExcelStyle, get_api_keys
-from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb
+from market_api_app.utils_gs import get_table, get_column_values_by_index
+from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb, \
+    get_stocks_wh
 from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order
 from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article, \
     wb_get_orders, get_order_data
@@ -611,6 +613,55 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
     style.style_dataframe(df, path_xls_file, "Номенклатура WB")
     print("Файл отчета готов")
     return path_xls_file
+
+
+def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, sheet_out: str):
+    wb_table = get_table(file_settings, table_key)
+    nm_ids = get_column_values_by_index(wb_table, sheet_in, 4)
+
+    client = MoySklad(api_key='')
+    stocks_data = get_stocks_wh(client, nm_ids)
+
+    # Сбор всех уникальных ключей из массивов словарей
+    unique_keys = set(key for _, _, dicts in stocks_data.values() for d in dicts for key in d)
+    # Вычисление суммы значений для каждого уникального ключа
+    key_sums = {}
+    for _, _, dicts in stocks_data.values():
+        for d in dicts:
+            for k, v in d.items():
+                key_sums[k] = key_sums.get(k, 0) + v
+
+    sorted_keys = ["FBS"] + sorted((key for key in unique_keys if key != "FBS"), key=lambda x: -key_sums[x])
+    # Преобразование данных
+    rows = []
+    for key, values in stocks_data.items():
+        # Извлекаем элементы кортежа
+        first_value = values[0]
+        second_value = values[1]
+        dict_list = values[2]
+        # Создаем строку для DataFrame
+        row = [key, first_value, second_value]
+        # Добавляем значения для каждого уникального ключа
+        for uk in sorted_keys:
+            # Ищем значение для текущего уникального ключа
+            value = 0  # Значение по умолчанию
+            for d in dict_list:
+                if uk in d:
+                    value = d[uk]
+                    break
+            row.append(value)
+        rows.append(row)
+
+    # Создаем DataFrame
+    columns = ['NmID', 'FBS остаток', 'FBO остаток'] + sorted_keys
+    df = pd.DataFrame(rows, columns=columns)
+
+    # Преобразование DataFrame в список списков и обновление листа
+    data = [df.columns.values.tolist()] + df.values.tolist()
+    sheet = wb_table.worksheet(sheet_out)
+    sheet.clear()
+    sheet.update(range_name="A1", values=data)
+    print(f"Данные успешно сохранены на лист в таблице '{wb_table}'.")
 
 
 if __name__ == '__main__':
