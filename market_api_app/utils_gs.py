@@ -69,3 +69,5 @@ if __name__ == '__main__':
     file_settings = 'wb-tabs.json'
     wb_table = get_table(file_settings, table_id)
     nm_ids = get_column_values_by_index(wb_table, 'ОПТ ', 4)
+
+

@@ -201,8 +201,6 @@ def get_stocks_wh(client: MoySklad, nm_list: list) -> dict:
     cards = get_cards(client, nm_list)
     offices = get_warehouses(client)
     warehouses = {warehouse['id']: warehouse for warehouse in offices}
-
-    print(cards[0]['sizes'])
     if not cards:
         print('Не удалось получить данные по корзине.')
         return {}
