@@ -1,11 +1,5 @@
-# import gspread
-import pandas as pd
-# from wb_app.settings import settings
 from gspread import Client, Spreadsheet, service_account
 from typing import List, Dict
-
-from market_api_app import MoySklad
-from market_api_app.utils_ms import get_stocks_wh
 
 
 def client_init_json(file_path: str) -> Client:

@@ -5,7 +5,7 @@ setup(
     name='market_api_app',
     version=__version__,
     packages=find_packages(),
-    install_requires=['requests', 'pandas', 'openpyxl'],
+    install_requires=['requests', 'pandas', 'openpyxl', 'gspread'],
     extras_require={
         "dev": ["pytest",],
     },

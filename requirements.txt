@@ -5,3 +5,4 @@ openpyxl~=3.1.5
 pprint3x~=3.10.4.6
 aiohttp~=3.11.13
 numpy~=2.2.0
+gspread~=6.2.0
