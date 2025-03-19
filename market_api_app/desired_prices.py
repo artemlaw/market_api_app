@@ -518,7 +518,7 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     if save_to_gs:
         # Преобразование DataFrame в список списков и обновление листа
         wb_table = get_table(file_settings, table_key)
-        data = [df.columns.values.tolist()] + df.values.tolist()
+        data = [df_group.columns.values.tolist()] + df_group.values.tolist()
         sheet = wb_table.worksheet(sheet_out)
         sheet.clear()
         sheet.update(range_name="A1", values=data)
