@@ -522,7 +522,7 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
         sheet = wb_table.worksheet(sheet_out)
         sheet.clear()
         sheet.update(range_name="A1", values=data)
-        print(f"Данные успешно сохранены на лист {sheet_out} в таблице '{wb_table}'.")
+        print(f'Данные успешно сохранены на лист "{sheet_out}" в таблице "{wb_table}".')
 
     style.style_dataframe(df_group, path_xls_file, sheet_title="Сводный", active_sheet=False)
     print("Файл отчета готов")
