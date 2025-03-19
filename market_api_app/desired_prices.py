@@ -380,7 +380,8 @@ def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
 
 
 def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0, acquiring: float = 1.6,
-                         one_fbs: bool = False):
+                         one_fbs: bool = False, save_to_gs: bool = False, file_settings: str = None,
+                         table_key: str = None, sheet_out: str = None):
     ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
     wb_client = WB(api_key=wb_token)
     orders_fbs, orders_fbo, nm_ids_fbs, nm_ids_fbo = wb_get_orders(wb_client, from_date, to_date)
@@ -495,22 +496,34 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
 
     df_group = ((
         df.groupby(['name', 'nm_id', 'article'])[
-            ["stock", "stock_fbs", "stock_fbo", "quantity"]
+            ["discount", "stock", "stock_fbs", "stock_fbo", "quantity"]
         ].agg({
+            "discount": "max",
             "stock": "max",
-            "stock_fbs": "sum",
-            "stock_fbo": "sum",
+            "stock_fbs": "max",
+            "stock_fbo": "max",
             "quantity": "sum"
         }).reset_index()
     ).rename(columns={
         'name': 'Номенклатура',
         'article': 'Артикул',
         'nm_id': 'NmId',
+        'discount': 'Дисконт, %',
         'stock': 'Остаток',
         'stock_fbs': 'FBS остаток в корзине',
         'stock_fbo': 'FBO остаток в корзине',
         'quantity': 'Продажи'})
     )
+
+    if save_to_gs:
+        # Преобразование DataFrame в список списков и обновление листа
+        wb_table = get_table(file_settings, table_key)
+        data = [df.columns.values.tolist()] + df.values.tolist()
+        sheet = wb_table.worksheet(sheet_out)
+        sheet.clear()
+        sheet.update(range_name="A1", values=data)
+        print(f"Данные успешно сохранены на лист {sheet_out} в таблице '{wb_table}'.")
+
     style.style_dataframe(df_group, path_xls_file, sheet_title="Сводный", active_sheet=False)
     print("Файл отчета готов")
     return path_xls_file
@@ -669,7 +682,7 @@ if __name__ == '__main__':
     # get_ym_profitability('03-03-2025', '03-03-2025', plan_margin=28.0, fbs=True)
     # oz = get_oz_profitability('17-02-2025', '17-02-2025', plan_margin=28.0)
     # print(oz)
-    wb_orders = get_wb_profitability('2025-03-13', '2025-03-13', plan_margin=28.0, acquiring=1.6,
+    wb_orders = get_wb_profitability('2025-03-18', '2025-03-19', plan_margin=28.0, acquiring=1.6,
                                      one_fbs=True)
     print(wb_orders)
 
