@@ -6,26 +6,10 @@ import numpy as np
 import logging
 
 from market_api_app import get_api_keys, MoySklad, ExcelStyle
-from market_api_app.utils_ms import get_ms_products_for_wb
+from market_api_app.utils_ms import get_ms_products_for_wb, get_stocks_info
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('WB FBO')
-
-
-def get_stocks_info(sizes):
-    fbs_stock = 0
-    fbo_stock = 0
-
-    for size in sizes:
-        stocks = size.get('stocks')
-        for stock in stocks:
-            wh_id = stock.get('wh')
-            if wh_id == 119261:
-                fbs_stock += stock.get('qty')
-            else:
-                fbo_stock += stock.get('qty')
-
-    return fbs_stock, fbo_stock
+logger = logging.getLogger('WB ASYNC')
 
 
 async def get_data(session, url, headers, params, max_retries=5, delay_seconds=30):

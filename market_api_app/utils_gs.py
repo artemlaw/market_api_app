@@ -1,10 +1,15 @@
-from gspread import Client, Spreadsheet, service_account
+from gspread import Client, Spreadsheet, service_account, service_account_from_dict
 from typing import List, Dict
 
 
 def client_init_json(file_path: str) -> Client:
     """Создание клиента для работы с Google Sheets."""
     return service_account(filename=file_path)
+
+
+def client_init_dict(service_account_dict: dict) -> Client:
+    """Создание клиента для работы с Google Sheets."""
+    return service_account_from_dict(service_account_dict)
 
 
 def get_table_by_url(client: Client, table_url):
@@ -53,9 +58,13 @@ def get_column_values_by_index(table: Spreadsheet, sheet_name: str, column_index
     return column_values[1:]
 
 
-def get_table(file_path: str, table_key: str):
+def get_table(access_file_or_dict: str | dict, table_key: str):
     """Получения таблицы из Google Sheets."""
-    client = client_init_json(file_path)
+    if isinstance(access_file_or_dict, dict):
+        client = client_init_dict(access_file_or_dict)
+    else:
+        client = client_init_json(access_file_or_dict)
+    # client = client_init_dict(file_path)
     if table_key.startswith('https'):
         table = get_table_by_url(client, table_key)
     else:
@@ -67,6 +76,7 @@ if __name__ == '__main__':
     table_link = 'https://docs.google.com/spreadsheets/d/_________'
     table_id = '_________'
     file_settings = 'wb-tabs.json'
+
     wb_table = get_table(file_settings, table_id)
     nm_ids = get_column_values_by_index(wb_table, 'ОПТ ', 4)
 
