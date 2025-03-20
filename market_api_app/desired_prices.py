@@ -380,7 +380,7 @@ def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
 
 
 def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0, acquiring: float = 1.6,
-                         one_fbs: bool = False, save_to_gs: bool = False, file_settings: str = None,
+                         one_fbs: bool = False, save_to_gs: bool = False, save_to_tab: bool = False, file_settings: str = None,
                          table_key: str = None, sheet_out: str = None):
     ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
     wb_client = WB(api_key=wb_token)
@@ -492,7 +492,6 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     path_xls_file = 'wb_рентабельность_по_заказам.xlsx'
     columns_to_align_right = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
     style = ExcelStyle(columns_to_align_right=columns_to_align_right)
-    style.style_dataframe(df_, path_xls_file, "Заказы WB")
 
     df_group = ((
         df.groupby(['name', 'nm_id', 'article'])[
@@ -524,8 +523,10 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
         sheet.update(range_name="A1", values=data)
         print(f'Данные успешно сохранены на лист "{sheet_out}" в таблице "{wb_table}".')
 
-    style.style_dataframe(df_group, path_xls_file, sheet_title="Сводный", active_sheet=False)
-    print("Файл отчета готов")
+    if save_to_tab:
+        style.style_dataframe(df_, path_xls_file, sheet_title="Заказы WB")
+        style.style_dataframe(df_group, path_xls_file, sheet_title="Сводный", active_sheet=False)
+        print("Файл отчета готов")
     return path_xls_file
 
 

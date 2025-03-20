@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime, timedelta
 from types import ModuleType
 from market_api_app.version import __version__
@@ -81,6 +82,16 @@ def format_date(date_str: str) -> str:
 
 def get_current_datetime(str_format: str = '%Y-%m-%d %H:%M:%S') -> str:
     return datetime.now().strftime(str_format)
+
+
+def dict_to_json_file(data: dict, file_path: str):
+    """Принимает словарь и записывает его в файл json.
+
+    :param data: Словарь, который будет записан в файл.
+    :param file_path: Путь к файлу, в который будет записан словарь.
+    """
+    with open(file_path, 'w', encoding='utf-8') as file:
+        json.dump(data, file, separators=(',', ':'), ensure_ascii=False)
 
 
 if __name__ == '__main__':
