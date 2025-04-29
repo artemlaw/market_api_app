@@ -240,10 +240,11 @@ def wb_get_orders(wb_client: WB, start_of_day: str, end_of_day: str):
 
     for order in wb_orders:
         srid = order.get('srid')
-        order_type = order.get('orderType')
+        # order_type = order.get('orderType')
         is_cancel = order.get('isCancel')
 
-        if order_type == 'Клиентский' and not is_cancel:
+        # if order_type == 'Клиентский' and not is_cancel:
+        if not is_cancel:
             if order.get('srid') in rids:
                 orders_fbs.append(order)
                 nm_ids_fbs.append(order.get('nmId'))
