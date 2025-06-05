@@ -16,7 +16,14 @@ SORTING = 20.0  # Стоимость обработки, зависит от с�
 LAST_MILE_PERCENT = 5.5  # Последняя миля, %
 LAST_MILE_MAX = 500.0
 ACQUIRING_PERCENT = 1.8  # Эквайринг, %
-MIN_PRICE = 60.0  # Минимальная цена рекомендуемой цены, ₽
+MIN_PRICE = 60.0  # Минимальная рекомендуемая цена, ₽
+
+
+def print_oz_constants():
+    print('Предопределены значения:')
+    print(f'* Эквайринг - {ACQUIRING_PERCENT}%')
+    print(f'* Обработка - {SORTING}₽')
+    print(f'* Минимальная рекомендуемая цена - {MIN_PRICE}₽')
 
 
 def calculate_recommended_price_oz(prime_cost: float, delivery_cost: float, sorting: float, delivery_cross_cost: float,
@@ -135,11 +142,6 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
     delivery_cross_cost - Доставка до места выдачи в РФ до 25р (было Последняя миля - 5,5% от цены, но не больше 500 р)
     sorting - Обработка = 20₽
     """
-
-    print('Предопределены значения:')
-    print(f'* Эквайринг - {ACQUIRING_PERCENT}%')
-    print(f'* Обработка - {SORTING}₽')
-
     article = order.get('article', '')
     article_data = tariffs_dict[article]
     price = order.get("price", 0.0)

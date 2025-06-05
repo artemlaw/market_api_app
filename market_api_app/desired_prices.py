@@ -3,7 +3,7 @@ from market_api_app import MoySklad, YaMarket, Ozon, WB, ExcelStyle, get_api_key
 from market_api_app.utils_gs import get_table, get_column_values_by_index
 from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb, \
     get_stocks_wh
-from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order
+from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order, print_oz_constants
 from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article, \
     wb_get_orders, get_order_data
 from market_api_app.utils_ya import get_category_ids, chunked_offers_list, get_dict_for_commission, \
@@ -283,6 +283,7 @@ def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     products = oz_client.get_products()
 
     print("Ozon: Получение актуальных тарифов")
+    print_oz_constants()
     offers_commission_dict = {
         prod['offer_id']: {
             'acquiring': prod.get('acquiring', 0),
