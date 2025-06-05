@@ -6,17 +6,30 @@ from market_api_app import Ozon
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('Ozon Utils')
 
-
 '''
 Константа можно вынести в перспективе в файл настроек модуля
 Необходимо проверять актуальность тарифов:
     * Логистика - calculate_logistic_cost
     * Последняя миля - calculate_last_mile_cost
 '''
-SORTING = 20.0  # Стоимость обработки, зависит от склада сдачи
+SORTING = 20.0  # Стоимость обработки, зависит от склада сдачи, ₽
 LAST_MILE_PERCENT = 5.5  # Последняя миля, %
 LAST_MILE_MAX = 500.0
-ACQUIRING_PERCENT = 1.85  # Эквайринг, %
+ACQUIRING_PERCENT = 1.8  # Эквайринг, %
+MIN_PRICE = 60.0  # Минимальная цена рекомендуемой цены, ₽
+
+
+def calculate_recommended_price_oz(prime_cost: float, delivery_cost: float, sorting: float, delivery_cross_cost: float,
+                                   plan_margin: float, commission: float, acquiring: float, min_price: float) -> float:
+    # Преобразуем проценты в доли
+    plan_margin /= 100
+    acquiring /= 100
+    commission /= 100
+    recom_price = round((prime_cost + delivery_cost + sorting + delivery_cross_cost)
+                        / (1 - plan_margin - commission - acquiring), 0)
+    if recom_price < min_price:
+        recom_price = min_price
+    return recom_price
 
 
 def get_oz_orders(oz_client: Ozon, from_date: str = '12-12-2024', to_date: str = '13-12-2024') -> list:
@@ -116,12 +129,6 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
     commission_cost - Комиссия % от цены, по категории товара
     acquiring_cost - Эквайринг 1,85% от цены
     delivery_cost - Логистика:
-        ||Было
-        * до 0,4 литра включительно — 43₽;
-        * свыше 0,4 литра до 1 литра включительно — 76₽;
-        * до 190 литров включительно — 12₽ за каждый дополнительный литр свыше объёма 1 литра;
-        * свыше 190 литров — 2344₽.
-        ||Стало
         * до 1 литра включительно — 80 ₽;
         * до 190 литров включительно — 18 ₽ за каждый дополнительный литр свыше объёма 1 л;
         * свыше 190 литров — 3478 ₽
@@ -129,42 +136,31 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
     sorting - Обработка = 20₽
     """
 
-    margin = round(plan_margin / 100, 3)
+    print('Предопределены значения:')
+    print(f'* Эквайринг - {ACQUIRING_PERCENT}%')
+    print(f'* Обработка - {SORTING}₽')
+
     article = order.get('article', '')
     article_data = tariffs_dict[article]
     price = order.get("price", 0.0)
     prime_cost = article_data.get("PRIME_COST", 0.0)
 
-    commission_percent = round(article_data.get("sales_percent_fbs", 0) / 100, 3)
+    sales_percent_fbs = article_data.get("sales_percent_fbs", 0)
+    commission_percent = round(sales_percent_fbs / 100, 3)
     commission_cost = round(price * commission_percent, 1)
 
     payment_percent = round(ACQUIRING_PERCENT / 100, 3)
     acquiring_cost = round(price * payment_percent, 1)
 
-    # Отдают вес, а не объем
-    # volume_weight = article_data.get("volume_weight", 0.0)
-    # delivery_cost = calculate_logistic_cost(volume_weight)
+    # Логистика
     delivery_cost = float(article_data.get("fbs_direct_flow_trans_max_amount", 0))
-
-    delivery_cross_percent = round(LAST_MILE_PERCENT / 100, 3)
-    delivery_cross_cost = calculate_last_mile_cost(price)
-
+    # Доставка до места выдачи
+    delivery_cross_cost = float(article_data.get("fbs_deliv_to_customer_amount", 0))
+    # Обработка
     sorting = SORTING
-
-    recommended_price = round(
-        (prime_cost + delivery_cost + sorting)
-        / (1 - margin - commission_percent - payment_percent - delivery_cross_percent)
-    )
-
-    # Проверяем, что последняя миля не превышает 500руб и делаем пересчет рекомендуемой цены
-    delivery_cross_cost_ = calculate_last_mile_cost(recommended_price)
-    recommended_price = round(
-        (prime_cost + delivery_cost + sorting + delivery_cross_cost_)
-        / (1 - margin - commission_percent - payment_percent)
-    )
-
-    # TODO: Добавить проверку на минимальную цену по рекомендованной цене
-
+    # Рекомендуемая цена
+    recommended_price = calculate_recommended_price_oz(prime_cost, delivery_cost, sorting, delivery_cross_cost,
+                                                       plan_margin, sales_percent_fbs, ACQUIRING_PERCENT, MIN_PRICE)
     reward = round(
         commission_cost
         + acquiring_cost

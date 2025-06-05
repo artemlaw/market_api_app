@@ -367,7 +367,7 @@ def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
         "Комиссия",
         "Эквайринг",
         "Логистика",
-        "Последняя миля",
+        "Доставка до места выдачи",
         "Обработка",
         "Прибыль",
         "Рентабельность",
@@ -681,11 +681,11 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
     # get_ym_profitability('03-03-2025', '03-03-2025', plan_margin=28.0, fbs=True)
-    # oz = get_oz_profitability('17-02-2025', '17-02-2025', plan_margin=28.0)
-    # print(oz)
-    wb_orders = get_wb_profitability('2025-05-17', '2025-05-18', plan_margin=28.0, acquiring=1.6,
-                                     one_fbs=True)
-    print(wb_orders)
+    oz = get_oz_profitability('04-06-2025', '05-06-2025', plan_margin=28.0)
+    print(oz)
+    # wb_orders = get_wb_profitability('2025-05-17', '2025-05-18', plan_margin=28.0, acquiring=1.6,
+    #                                  one_fbs=True)
+    # print(wb_orders)
 
 
     # wb = get_wb_desired_prices(plan_margin=28.0, fbs=False)
