@@ -3,7 +3,7 @@ from market_api_app import MoySklad, YaMarket, Ozon, WB, ExcelStyle, get_api_key
 from market_api_app.utils_gs import get_table, get_column_values_by_index
 from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb, \
     get_stocks_wh
-from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order, print_oz_constants
+from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order, print_oz_constants, get_oz_data_for_article
 from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article, \
     wb_get_orders, get_order_data
 from market_api_app.utils_ya import get_category_ids, chunked_offers_list, get_dict_for_commission, \
@@ -235,6 +235,7 @@ def get_oz_desired_prices(plan_margin: float = 28.0):
     products = oz_client.get_products()
 
     print("Ozon: Получение актуальных тарифов")
+    print_oz_constants()
     offers_commission_dict = {
         prod['offer_id']: {
             'acquiring': prod.get('acquiring', 0),
@@ -263,14 +264,66 @@ def get_oz_desired_prices(plan_margin: float = 28.0):
         for key in oz_set & ms_set
     }
 
-    print(plan_margin, tariffs_dict)
-
     oz_ms_set = oz_set - ms_set
     if oz_ms_set:
         print("Номенклатура которая есть в Ozon, но не связана в МС:")
         print("\n".join(oz_ms_set))
 
-    # TODO: Продолжить доработку отчета "Рекомендуемая цена Ozon" описав функцию get_oz_data_for_article
+    oz_ms_common_set = oz_set & ms_set
+
+    data_for_report = [
+        get_oz_data_for_article(article, tariffs_dict, plan_margin)
+        for article in oz_ms_common_set
+    ]
+
+    print('Формирую отчет "Рекомендуемые цены Ozon"')
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+    df = pd.DataFrame(data_for_report)
+    df_total = (
+        df.agg(
+            {
+                "stock": "sum",
+                "price": "sum",
+                "recommended_price": "sum",
+                "prime_cost": "sum",
+                "commission": "sum",
+                "acquiring": "sum",
+                "delivery": "sum",
+                "crossregional_delivery": "sum",
+                "sorting": "sum",
+                "profit": "sum",
+            }
+        )
+        .to_frame()
+        .T
+    )
+    df_total["name"] = ""
+    df_total["article"] = ""
+    df_total["profitability"] = round((df_total["profit"] / df_total["price"]) * 100, 1)
+
+    df = pd.concat([df, df_total], ignore_index=True)
+
+    df.columns = [
+        "Номенклатура",
+        "Артикул",
+        "Остаток",
+        "Цена продажи",
+        "Рекомендуемая цена",
+        "Себестоимость",
+        "Комиссия",
+        "Эквайринг",
+        "Логистика",
+        "Доставка до места выдачи",
+        "Обработка",
+        "Прибыль",
+        "Рентабельность",
+    ]
+    path_xls_file = f'ozon_fbs_рекомендуемые_цены.xlsx'
+    style = ExcelStyle()
+    style.style_dataframe(df, path_xls_file, "Номенклатура Ozon")
+    print("Файл отчета готов")
+    return path_xls_file
 
 
 def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0):
@@ -682,7 +735,8 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
     # get_ym_profitability('03-03-2025', '03-03-2025', plan_margin=28.0, fbs=True)
-    oz = get_oz_profitability('04-06-2025', '05-06-2025', plan_margin=28.0)
+    # oz = get_oz_profitability('04-06-2025', '05-06-2025', plan_margin=28.0)
+    oz = get_oz_desired_prices(plan_margin=28.0)
     print(oz)
     # wb_orders = get_wb_profitability('2025-05-17', '2025-05-18', plan_margin=28.0, acquiring=1.6,
     #                                  one_fbs=True)

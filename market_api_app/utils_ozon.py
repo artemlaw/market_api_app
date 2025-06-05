@@ -152,6 +152,7 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
     commission_cost = round(price * commission_percent, 1)
 
     payment_percent = round(ACQUIRING_PERCENT / 100, 3)
+    # Можно сделать как в рекомендуемых ценах из article_data.get("acquiring", 0.0), а не предопределенное
     acquiring_cost = round(price * payment_percent, 1)
 
     # Логистика
@@ -178,6 +179,56 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
         "order_number": order.get("order_number", ""),
         "created": order.get("created", ""),
         "quantity": order.get("quantity", 0.0),
+        "name": article_data.get("NAME", ""),
+        "article": article,
+        "stock": article_data.get("STOCK", 0.0),
+        "price": price,
+        "recommended_price": recommended_price,
+        "prime_cost": prime_cost,
+        "commission": commission_cost,
+        "acquiring": acquiring_cost,
+        "delivery": delivery_cost,
+        "crossregional_delivery": delivery_cross_cost,
+        "sorting": sorting,
+        "profit": profit,
+        "profitability": profitability,
+    }
+
+
+def get_oz_data_for_article(article: str, tariffs_dict: dict, plan_margin: float = 28.0):
+    article_data = tariffs_dict[article]
+    price = article_data.get("price", 0.0)
+    prime_cost = article_data.get("PRIME_COST", 0.0)
+
+    sales_percent_fbs = article_data.get("sales_percent_fbs", 0)
+    commission_percent = round(sales_percent_fbs / 100, 3)
+    commission_cost = round(price * commission_percent, 1)
+
+    # payment_percent = round(ACQUIRING_PERCENT / 100, 3)
+    # acquiring_cost = round(price * payment_percent, 1)
+    acquiring_cost = round(article_data.get("acquiring", 0.0), 1)
+
+    # Логистика
+    delivery_cost = float(article_data.get("fbs_direct_flow_trans_max_amount", 0))
+    # Доставка до места выдачи
+    delivery_cross_cost = float(article_data.get("fbs_deliv_to_customer_amount", 0))
+    # Обработка
+    sorting = SORTING
+    # Рекомендуемая цена
+    recommended_price = calculate_recommended_price_oz(prime_cost, delivery_cost, sorting, delivery_cross_cost,
+                                                       plan_margin, sales_percent_fbs, ACQUIRING_PERCENT, MIN_PRICE)
+    reward = round(
+        commission_cost
+        + acquiring_cost
+        + delivery_cost
+        + delivery_cross_cost
+        + sorting,
+        1,
+    )
+    profit = round(price - prime_cost - reward, 1)
+    profitability = round(profit / price * 100, 1)
+
+    return {
         "name": article_data.get("NAME", ""),
         "article": article,
         "stock": article_data.get("STOCK", 0.0),
