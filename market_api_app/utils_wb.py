@@ -7,16 +7,19 @@ def find_warehouse_by_name(warehouses: list, name: str) -> dict | None:
     return next((warehouse for warehouse in warehouses if warehouse['warehouseName'] == name), None)
 
 
-def get_logistic_dict(tariffs_data: dict, warehouse_name: str = 'Маркетплейс') -> dict:
+def get_logistic_dict(tariffs_data: dict, warehouse_name: str = 'Маркетплейс: Центральный федеральный округ') -> dict:
     tariff = find_warehouse_by_name(warehouses=tariffs_data['response']['data']['warehouseList'], name=warehouse_name)
     if not tariff:
         tariff = find_warehouse_by_name(warehouses=tariffs_data['response']['data']['warehouseList'], name='Коледино')
+
+    tariff_for_base_l = tariff['boxDeliveryBase'] if tariff['boxDeliveryBase'] != '-' else tariff['boxDeliveryMarketplaceBase']
+    tariff_over_base = tariff['boxDeliveryLiter'] if tariff['boxDeliveryLiter'] != '-' else tariff['boxDeliveryMarketplaceLiter']
     # Логистика
     logistic_dict = {
         'KTR': 1.0,
-        'TARIFF_FOR_BASE_L': float(tariff['boxDeliveryBase'].replace(',', '.')),
+        'TARIFF_FOR_BASE_L': float(tariff_for_base_l.replace(',', '.')),
         'TARIFF_BASE': 1.0,
-        'TARIFF_OVER_BASE': float(tariff['boxDeliveryLiter'].replace(',', '.')),
+        'TARIFF_OVER_BASE': float(tariff_over_base.replace(',', '.')),
         'WH_COEFFICIENT': round(float(tariff['boxDeliveryAndStorageExpr'].replace(',', '.')) / 100, 2)
     }
     return logistic_dict
