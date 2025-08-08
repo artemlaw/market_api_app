@@ -187,7 +187,7 @@ def get_stocks_by_size(sizes: list, wh: dict) -> tuple:
         stocks = size.get('stocks')
         for stock in stocks:
             wh_id = stock.get('wh')
-            if wh_id == 119261:
+            if wh_id == 119261 or wh_id == 1609:
                 fbs_stock += stock.get('qty')
                 stock_list.append({'FBS': stock.get('qty')})
             else:

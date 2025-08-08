@@ -63,6 +63,15 @@ class WB(ApiBase):
             logger.error('Не удалось получить данные о заказах.')
         return response_json
 
+    def get_sales(self, from_data):
+        url = f'https://statistics-api.{self.domain}/api/v1/supplier/sales'
+        params = {'dateFrom': from_data, 'flag': 1}
+        result = self.get(url, params)
+        response_json = result.json() if result else []
+        if not result:
+            logger.error('Не удалось получить данные о заказах.')
+        return response_json
+
     def get_orders_fbs(self, from_date=None, to_date=None):
         url = self.host + 'api/v3/orders'
         params = {'limit': 1000, 'next': 0}
