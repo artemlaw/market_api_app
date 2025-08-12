@@ -144,10 +144,11 @@ def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, catego
 def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: float, acquiring: float = 1.5, fbs: bool = True) -> dict:
     wb_prices_dict = base_dict['wb_prices_dict']
     if fbs:
-        logistic_dict = get_logistic_dict(base_dict['tariffs_data'], warehouse_name='Маркетплейс')
+        logistic_dict = get_logistic_dict(base_dict['tariffs_data'], warehouse_name='Маркетплейс: Центральный '
+                                                                                    'федеральный округ')
     else:
         logistic_dict = get_logistic_dict(base_dict['tariffs_data'],
-                                          warehouse_name=order.get('warehouseName', 'Коледино'))
+                                          warehouse_name=order.get('warehouseName', 'Подольск'))
 
     nm_id = order.get('nmId', '')
     # Получение цены
