@@ -594,7 +594,7 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs
 
     tariffs_data = wb_client.get_tariffs_for_box()
     warehouse_name = 'Маркетплейс: Центральный федеральный округ' if fbs else 'Подольск'
-    logistic_dict = get_logistic_dict(tariffs_data, warehouse_name)
+    logistic_dict = get_logistic_dict(tariffs_data, warehouse_name, fbs)
     category_dict = get_category_dict(wb_client)
     wb_prices_dict = get_price_dict(wb_client)
 
@@ -760,7 +760,7 @@ if __name__ == '__main__':
     # oz = get_oz_profitability('04-06-2025', '05-06-2025', plan_margin=28.0)
     # oz = get_oz_desired_prices(plan_margin=28.0)
     # print(oz)
-    wb_orders = get_wb_profitability('2025-08-07', '2025-08-08', plan_margin=28.0, acquiring=1.6,
+    wb_orders = get_wb_profitability('2025-08-20', '2025-08-21', plan_margin=28.0, acquiring=1.6,
                                      one_fbs=True)
     # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
 

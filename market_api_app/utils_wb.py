@@ -7,7 +7,8 @@ def find_warehouse_by_name(warehouses: list, name: str) -> dict | None:
     return next((warehouse for warehouse in warehouses if warehouse['warehouseName'] == name), None)
 
 
-def get_logistic_dict(tariffs_data: dict, warehouse_name: str = 'Маркетплейс: Центральный федеральный округ') -> dict:
+def get_logistic_dict(tariffs_data: dict, warehouse_name: str = 'Маркетплейс: Центральный федеральный округ',
+                      fbs: bool = False) -> dict:
     tariff = find_warehouse_by_name(warehouses=tariffs_data['response']['data']['warehouseList'], name=warehouse_name)
     if not tariff:
         tariff = find_warehouse_by_name(warehouses=tariffs_data['response']['data']['warehouseList'], name='Коледино')
@@ -17,20 +18,32 @@ def get_logistic_dict(tariffs_data: dict, warehouse_name: str = 'Маркетп�
     # boxDeliveryCoefExpr, boxDeliveryMarketplaceCoefExpr - Коэффициент Логистика, %.
     # На него умножается стоимость логистики. Уже учтён в тарифах
 
-    tariff_for_base_l = tariff['boxDeliveryBase'] \
-        if tariff['boxDeliveryBase'] != '-' else tariff['boxDeliveryMarketplaceBase']
-    tariff_over_base = tariff['boxDeliveryLiter'] \
-        if tariff['boxDeliveryLiter'] != '-' else tariff['boxDeliveryMarketplaceLiter']
-    wb_coefficient = tariff['boxDeliveryCoefExpr'] \
-        if tariff['boxDeliveryCoefExpr'] != '-' else tariff['boxDeliveryMarketplaceCoefExpr']
+    # Применение fbs для подтягивания тарифа FBS по складу FBW
+    logistics_first_liter = tariff['boxDeliveryBase'] \
+        if tariff['boxDeliveryBase'] != '-' or not fbs else tariff['boxDeliveryMarketplaceBase']
+    logistics_extra_liter = tariff['boxDeliveryLiter'] \
+        if tariff['boxDeliveryLiter'] != '-' or not fbs else tariff['boxDeliveryMarketplaceLiter']
+    logistics_coefficient = tariff['boxDeliveryCoefExpr'] \
+        if tariff['boxDeliveryCoefExpr'] != '-' or not fbs else tariff['boxDeliveryMarketplaceCoefExpr']
+
+    # Вырезать показатели после изменения использования метода
+    # tariff_for_base_l = tariff['boxDeliveryBase'] \
+    #     if tariff['boxDeliveryBase'] != '-' else tariff['boxDeliveryMarketplaceBase']
+    # tariff_over_base = tariff['boxDeliveryLiter'] \
+    #     if tariff['boxDeliveryLiter'] != '-' else tariff['boxDeliveryMarketplaceLiter']
+    # wb_coefficient = tariff['boxDeliveryCoefExpr'] \
+    #     if tariff['boxDeliveryCoefExpr'] != '-' else tariff['boxDeliveryMarketplaceCoefExpr']
 
     # Логистика
     logistic_dict = {
         'KTR': 1.0,
-        'TARIFF_FOR_BASE_L': float(tariff_for_base_l.replace(',', '.')),
         'TARIFF_BASE': 1.0,
-        'TARIFF_OVER_BASE': float(tariff_over_base.replace(',', '.')),
-        'WH_COEFFICIENT': round(float(wb_coefficient.replace(',', '.')) / 100, 2)
+        # 'TARIFF_FOR_BASE_L': float(tariff_for_base_l.replace(',', '.')),
+        # 'TARIFF_OVER_BASE': float(tariff_over_base.replace(',', '.')),
+        # 'WH_COEFFICIENT': round(float(wb_coefficient.replace(',', '.')) / 100, 2),
+        'LOGISTICS_FIRST_LITER': float(logistics_first_liter.replace(',', '.')),
+        'LOGISTICS_EXTRA_LITER': float(logistics_extra_liter.replace(',', '.')),
+        'LOGISTICS_COEFFICIENT': round(float(logistics_coefficient.replace(',', '.')) / 100, 2)
     }
     return logistic_dict
 
@@ -70,6 +83,13 @@ def get_logistics(ktr: float, tariff_for_base_l: float, tariff_base: float, tari
     return logistics
 
 
+def get_logistics_new(ktr: float, tariff_base: float, logistics_first_liter: float, logistics_extra_liter: float,
+                      volume: float) -> float:
+    volume_calc = max(volume - tariff_base, 0)
+    logistics = round((logistics_first_liter * tariff_base + logistics_extra_liter * volume_calc) * ktr, 2)
+    return logistics
+
+
 # TODO: WB - Проверять на актуальность расчет рекомендуемой цены
 def calculate_recommended_price(prime_cost: float, logistics: float, plan_margin: float,
                                 commission: float, acquiring: float = 1.6, min_price: float = 60.0) -> float:
@@ -100,8 +120,11 @@ def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, catego
     else:
         commission = commissions[0] if fbs else commissions[1]
 
-    logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
-                              logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
+    # logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
+    #                           logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
+    logistics = get_logistics_new(ktr=logistic_dict['KTR'], tariff_base=logistic_dict['TARIFF_BASE'],
+                                  logistics_first_liter=logistic_dict['LOGISTICS_FIRST_LITER'],
+                                  logistics_extra_liter=logistic_dict['LOGISTICS_EXTRA_LITER'], volume=volume)
 
     commission_cost = round(commission / 100 * price, 1)
     acquiring_cost = round(acquiring / 100 * price, 1)
@@ -151,11 +174,12 @@ def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, catego
     return data
 
 
-def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: float, acquiring: float = 1.5, fbs: bool = True) -> dict:
+def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: float, acquiring: float = 1.5,
+                   fbs: bool = True) -> dict:
     wb_prices_dict = base_dict['wb_prices_dict']
     if fbs:
         logistic_dict = get_logistic_dict(base_dict['tariffs_data'], warehouse_name='Маркетплейс: Центральный '
-                                                                                    'федеральный округ')
+                                                                                    'федеральный округ', fbs=True)
     else:
         logistic_dict = get_logistic_dict(base_dict['tariffs_data'],
                                           warehouse_name=order.get('warehouseName', 'Подольск'))
@@ -183,8 +207,11 @@ def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: flo
         commission = commissions[0] if fbs else commissions[1]
 
     volume = product.get('VOLUME', 0.0)
-    logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
-                              logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
+    # logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
+    #                           logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
+    logistics = get_logistics_new(ktr=logistic_dict['KTR'], tariff_base=logistic_dict['TARIFF_BASE'],
+                                  logistics_first_liter=logistic_dict['LOGISTICS_FIRST_LITER'],
+                                  logistics_extra_liter=logistic_dict['LOGISTICS_EXTRA_LITER'], volume=volume)
 
     commission_cost = round(commission / 100 * price, 1)
     acquiring_cost = round(acquiring / 100 * price, 1)
