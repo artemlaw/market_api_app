@@ -12,15 +12,25 @@ def get_logistic_dict(tariffs_data: dict, warehouse_name: str = 'Маркетп�
     if not tariff:
         tariff = find_warehouse_by_name(warehouses=tariffs_data['response']['data']['warehouseList'], name='Коледино')
 
-    tariff_for_base_l = tariff['boxDeliveryBase'] if tariff['boxDeliveryBase'] != '-' else tariff['boxDeliveryMarketplaceBase']
-    tariff_over_base = tariff['boxDeliveryLiter'] if tariff['boxDeliveryLiter'] != '-' else tariff['boxDeliveryMarketplaceLiter']
+    # boxDeliveryBase, boxDeliveryMarketplaceBase - Логистика, первый литр, ₽
+    # boxDeliveryLiter, boxDeliveryMarketplaceLiter - Логистика, дополнительный литр, ₽
+    # boxDeliveryCoefExpr, boxDeliveryMarketplaceCoefExpr - Коэффициент Логистика, %.
+    # На него умножается стоимость логистики. Уже учтён в тарифах
+
+    tariff_for_base_l = tariff['boxDeliveryBase'] \
+        if tariff['boxDeliveryBase'] != '-' else tariff['boxDeliveryMarketplaceBase']
+    tariff_over_base = tariff['boxDeliveryLiter'] \
+        if tariff['boxDeliveryLiter'] != '-' else tariff['boxDeliveryMarketplaceLiter']
+    wb_coefficient = tariff['boxDeliveryCoefExpr'] \
+        if tariff['boxDeliveryCoefExpr'] != '-' else tariff['boxDeliveryMarketplaceCoefExpr']
+
     # Логистика
     logistic_dict = {
         'KTR': 1.0,
         'TARIFF_FOR_BASE_L': float(tariff_for_base_l.replace(',', '.')),
         'TARIFF_BASE': 1.0,
         'TARIFF_OVER_BASE': float(tariff_over_base.replace(',', '.')),
-        'WH_COEFFICIENT': round(float(tariff['boxDeliveryAndStorageExpr'].replace(',', '.')) / 100, 2)
+        'WH_COEFFICIENT': round(float(wb_coefficient.replace(',', '.')) / 100, 2)
     }
     return logistic_dict
 
