@@ -1,5 +1,6 @@
 import pandas as pd
 from market_api_app import MoySklad, YaMarket, Ozon, WB, ExcelStyle, get_api_keys
+from market_api_app.utils import add_regions_sum_immutable
 from market_api_app.utils_gs import get_table, get_column_values_by_index
 from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb, \
     get_stocks_wh
@@ -691,7 +692,10 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
     nm_ids = get_column_values_by_index(wb_table, sheet_in, 4)
 
     client = MoySklad(api_key='')
-    stocks_data = get_stocks_wh(client, nm_ids)
+    stocks_data_ = get_stocks_wh(client, nm_ids)
+
+    stocks_data = add_regions_sum_immutable(stocks_data_, ['Котовск WB', 'Волгоградская обл.WB',
+                                                           'Екатеринбург WB', 'Воронеж WB', 'Краснодар WB'])
 
     # Сбор всех уникальных ключей из массивов словарей
     unique_keys = set(key for _, _, dicts in stocks_data.values() for d in dicts for key in d)
@@ -702,7 +706,8 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
             for k, v in d.items():
                 key_sums[k] = key_sums.get(k, 0) + v
 
-    sorted_keys = ["FBS"] + sorted((key for key in unique_keys if key != "FBS"), key=lambda x: -key_sums[x])
+    sorted_keys = ["FBS", "Регионы"] + sorted((key for key in unique_keys if key != "FBS" and key != "Регионы"),
+                                              key=lambda x: -key_sums[x])
     # Преобразование данных
     rows = []
     for key, values in stocks_data.items():
@@ -710,6 +715,7 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
         first_value = values[0]
         second_value = values[1]
         dict_list = values[2]
+
         # Создаем строку для DataFrame
         row = [key, first_value, second_value]
         # Добавляем значения для каждого уникального ключа
@@ -756,15 +762,17 @@ def get_wb_orders(from_date: str, to_date: str):
 
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    # get_ym_profitability('03-03-2025', '03-03-2025', plan_margin=28.0, fbs=True)
+    # ya = get_ym_profitability('21-08-2025', '21-08-2025', plan_margin=28.0, fbs=True)
+    # print(ya)
     # oz = get_oz_profitability('04-06-2025', '05-06-2025', plan_margin=28.0)
     # oz = get_oz_desired_prices(plan_margin=28.0)
     # print(oz)
+
     wb_orders = get_wb_profitability('2025-08-20', '2025-08-21', plan_margin=28.0, acquiring=1.6,
                                      one_fbs=True)
     # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
-
     print(wb_orders)
+
     # client = MoySklad(api_key='')
     # stocks_data = get_stocks_wh(client, [251840861,])
     # print(stocks_data)
@@ -779,3 +787,5 @@ if __name__ == '__main__':
     # ym_client = YaMarket(api_key=ym_token)
     # tree = ym_client.get_tree()
     # print(tree)
+
+    # update_stocks_in_tabs(file_settings, table_id, sheet_in, sheet_out)

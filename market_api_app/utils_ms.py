@@ -121,7 +121,7 @@ def get_stocks_info(sizes: list) -> tuple:
         stocks = size.get('stocks')
         for stock in stocks:
             wh_id = stock.get('wh')
-            if wh_id == 119261:
+            if wh_id == 119261 or wh_id == 302088:
                 fbs_stock += stock.get('qty')
             else:
                 fbo_stock += stock.get('qty')

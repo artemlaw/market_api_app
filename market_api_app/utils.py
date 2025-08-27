@@ -94,6 +94,33 @@ def dict_to_json_file(data: dict, file_path: str):
         json.dump(data, file, separators=(',', ':'), ensure_ascii=False)
 
 
+def add_regions_sum_immutable(data_dict: dict, target_regions: list) -> dict:
+    """
+    Создает новый словарь с добавленными суммами регионов.
+    Не изменяет исходный словарь.
+
+    :param data_dict: Словарь, исходный из get_stocks_wh.
+    :param target_regions: Список наименований складов по которым суммировать остаток в 'Регионы'
+    """
+    result = {}
+
+    for key, value in data_dict.items():
+        a, b, items_list = value
+        total_region_sum = 0
+        # Суммируем значения для целевых регионов
+        for item in items_list:
+            for region_name, region_value in item.items():
+                if region_name in target_regions:
+                    total_region_sum += region_value
+
+        # Создаем новый список с добавленной записью
+        modified_items = items_list + [{'Регионы': total_region_sum}]
+        # Создаем новый кортеж
+        result[key] = (a, b, modified_items)
+
+    return result
+
+
 if __name__ == '__main__':
     # dates = get_date_for_request('2024-08-30', '2024-09-01')
     # print(dates)
