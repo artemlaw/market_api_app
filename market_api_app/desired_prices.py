@@ -695,7 +695,8 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
     stocks_data_ = get_stocks_wh(client, nm_ids)
 
     stocks_data = add_regions_sum_immutable(stocks_data_, ['Котовск WB', 'Волгоградская обл.WB',
-                                                           'Екатеринбург WB', 'Воронеж WB', 'Краснодар WB'])
+                                                           'Екатеринбург WB', 'Воронеж WB', 'Краснодар WB',
+                                                           'Волгоградская обл.WB', 'Новосибирск WB', 'Невинномысск WB'])
 
     # Сбор всех уникальных ключей из массивов словарей
     unique_keys = set(key for _, _, dicts in stocks_data.values() for d in dicts for key in d)
@@ -706,8 +707,9 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
             for k, v in d.items():
                 key_sums[k] = key_sums.get(k, 0) + v
 
-    sorted_keys = ["FBS", "Регионы"] + sorted((key for key in unique_keys if key != "FBS" and key != "Регионы"),
-                                              key=lambda x: -key_sums[x])
+    sorted_keys = ["FBS", "Екатеринбург WB", "Регионы"] + sorted((key for key in unique_keys if key != "FBS"
+                                                                  and key != "Екатеринбург WB" and key != "Регионы"),
+                                                                 key=lambda x: -key_sums[x])
     # Преобразование данных
     rows = []
     for key, values in stocks_data.items():
