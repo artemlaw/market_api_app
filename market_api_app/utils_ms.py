@@ -134,7 +134,7 @@ def get_prices_info(sizes: list) -> dict:
     basket_price = 0
 
     for size in sizes:
-        price = size.get('price')
+        price = size.get('price', {})
         shop_price = price.get('basic', 0) / 100
         basket_price = price.get('product', 0) / 100
 
