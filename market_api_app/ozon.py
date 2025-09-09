@@ -26,6 +26,16 @@ class Ozon(ApiBase):
             logger.error('Не удалось получить информацию по товарам.')
         return result_json.get("result", {}).get("items", [])
 
+    def get_products_info_v3(self, product_id: list):
+        # logger.info(f"Получение детальной информации по товарам")
+        url = self.host + "v3/product/info/list"
+        data = {"product_id": product_id}
+        result = self.post(url, data)
+        result_json = result.json() if result else {}
+        if not result:
+            logger.error('Не удалось получить информацию по товарам.')
+        return result_json.get("items", [])
+
     def get_prices(self, product_id: list):
         logger.info(f"Получение данных по тарифам")
         url = self.host + "v5/product/info/prices"
@@ -68,6 +78,41 @@ class Ozon(ApiBase):
                 products_info = self.get_prices(product_id=products_ids)
                 offers_list += products_info
                 if result_json.get("result", {}).get("total", 0) < total:
+                    break
+                data["last_id"] = result_json.get("result", {}).get("last_id", "")
+                total += limit
+            else:
+                logger.error("Не удалось получить данные о товарах.")
+                break
+        return offers_list
+
+    def get_products_v2(self):
+        logger.info(f"Получение данных по товарах")
+        url = self.host + "v3/product/list"
+        limit = 1000
+        data = {
+            "filter": {
+                "offer_id": [],
+                "product_id": [],
+                "visibility": "ALL"
+            },
+            "last_id": "",
+            "limit": limit
+        }
+
+        offers_list = []
+        total = limit
+        while True:
+            result = self.post(url, data)
+            result_json = result.json() if result else {}
+            if result_json and result_json.get("result"):
+                products_ = result_json.get("result", {}).get("items", [])
+                products_ids = [product['product_id'] for product in products_ if not product['archived']]
+                products_info = self.get_products_info_v3(product_id=products_ids)
+                offers_list += products_info
+                total_full = result_json.get("result", {}).get("total", 0)
+                logger.info(f"Всего товаров: {total_full}, осталось: {total_full - len(offers_list)}")
+                if total_full < total:
                     break
                 data["last_id"] = result_json.get("result", {}).get("last_id", "")
                 total += limit

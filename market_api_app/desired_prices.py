@@ -1,9 +1,11 @@
+import math
+
 import pandas as pd
 from market_api_app import MoySklad, YaMarket, Ozon, WB, ExcelStyle, get_api_keys
 from market_api_app.utils import add_regions_sum_immutable
 from market_api_app.utils_gs import get_table, get_column_values_by_index
 from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb, \
-    get_stocks_wh
+    get_stocks_wh, get_cards_prices
 from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order, print_oz_constants, get_oz_data_for_article
 from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article, \
     wb_get_orders, get_order_data
@@ -743,6 +745,47 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
     print(f"Данные успешно сохранены на лист в таблице '{wb_table}'.")
 
 
+# def update_prices_in_tabs(file_settings: str, table_key: str, sheet_in: str, sheet_out: str):
+def update_prices_in_tabs(file_settings: str, table_key: str, sheet_in: str, sheet_out: str):
+    wb_table = get_table(file_settings, table_key)
+    nm_ids = get_column_values_by_index(wb_table, sheet_in, 4)
+    # nm_ids = [149751990,]
+
+    ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
+    ms_client = MoySklad(api_key=ms_token)
+    wb_client = WB(api_key=wb_token)
+    wb_prices = get_price_dict(wb_client)
+    cards_prices = {key: {'discount': wb_prices.get(key, {}).get('discount', 0),
+                          'price': wb_prices.get(key, {}).get('price', 0), **value} for key, value
+                    in get_cards_prices(ms_client, nm_ids).items()}
+    #TODO: Сделать формулу расчета спп, убрать из async функционал.
+
+    # Преобразование данных
+    rows = []
+    for key, values in cards_prices.items():
+        # Извлекаем элементы
+        price = values.get('price', 0)
+        discount = values.get('discount', 0)
+        shop_price = values.get('shop_price', 0)
+        basket_price = values.get('basket_price', 0)
+        # sp = round(basket_price / price, 2)
+        spp = 100 - math.floor(basket_price / price * 100)
+        # Создаем строку для DataFrame
+        row = [key, price, discount, shop_price, basket_price, spp]
+        rows.append(row)
+
+    # Создаем DataFrame
+    columns = ['NmID', 'Цена до скидки', 'Скидка магазина', 'Цена магазина без скидки', 'Цена в корзине', 'СПП']
+
+    df = pd.DataFrame(rows, columns=columns)
+    # Преобразование DataFrame в список списков и обновление листа
+    data = [df.columns.values.tolist()] + df.values.tolist()
+    sheet = wb_table.worksheet(sheet_out)
+    sheet.clear()
+    sheet.update(range_name="A1", values=data)
+    print(f"Данные успешно сохранены на лист в таблице '{wb_table}'.")
+
+
 def get_wb_orders(from_date: str, to_date: str):
     ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
     wb_client = WB(api_key=wb_token)
@@ -770,10 +813,10 @@ if __name__ == '__main__':
     # oz = get_oz_desired_prices(plan_margin=28.0)
     # print(oz)
 
-    wb_orders = get_wb_profitability('2025-08-20', '2025-08-21', plan_margin=28.0, acquiring=1.6,
-                                     one_fbs=True)
-    # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
-    print(wb_orders)
+    # wb_orders = get_wb_profitability('2025-08-20', '2025-08-21', plan_margin=28.0, acquiring=1.6,
+    #                                  one_fbs=True)
+    # # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
+    # print(wb_orders)
 
     # client = MoySklad(api_key='')
     # stocks_data = get_stocks_wh(client, [251840861,])
@@ -789,5 +832,7 @@ if __name__ == '__main__':
     # ym_client = YaMarket(api_key=ym_token)
     # tree = ym_client.get_tree()
     # print(tree)
-
+    # file_settings, table_id, sheet_in, sheet_out = "", "", "", ""
     # update_stocks_in_tabs(file_settings, table_id, sheet_in, sheet_out)
+
+    update_prices_in_tabs()

@@ -129,9 +129,22 @@ def get_stocks_info(sizes: list) -> tuple:
     return fbs_stock, fbo_stock
 
 
+def get_prices_info(sizes: list) -> dict:
+    shop_price = 0
+    basket_price = 0
+
+    for size in sizes:
+        price = size.get('price')
+        shop_price = price.get('basic', 0) / 100
+        basket_price = price.get('product', 0) / 100
+
+    return {'shop_price': shop_price, 'basket_price': basket_price}
+
+
 def get_cards_details(client: MoySklad, nm_ids: str) -> list:
     """Получение данных корзины"""
-    url = 'https://card.wb.ru/cards/v2/detail'
+    # url = 'https://card.wb.ru/cards/v2/detail'
+    url = 'https://card.wb.ru/cards/v4/detail'
     headers = {
         'Accept': '*/*',
         'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -154,7 +167,8 @@ def get_cards_details(client: MoySklad, nm_ids: str) -> list:
     response_json = result.json() if result else []
     if not result:
         print('Не удалось получить данные по корзине.')
-    return response_json.get('data', {}).get('products', [])
+    # return response_json.get('data', {}).get('products', [])
+    return response_json.get('products', [])
 
 
 def get_warehouses(client: MoySklad) -> list:
@@ -225,6 +239,15 @@ def get_cards_stocks(client: MoySklad, nn_list: list):
         print('Не удалось получить данные по корзине.')
         return {}
     return {str(card['id']): get_stocks_info(card['sizes']) for card in cards}
+
+
+def get_cards_prices(client: MoySklad, nn_list: list):
+    print("WB: Получение цены из корзины")
+    cards = get_cards(client, nn_list)
+    if not cards:
+        print('Не удалось получить данные по корзине.')
+        return {}
+    return {int(card['id']): get_prices_info(card['sizes']) for card in cards}
 
 
 def get_ms_products_for_wb(client: MoySklad, fbo_stock: bool = False, limiter_list: list = None) -> dict:
