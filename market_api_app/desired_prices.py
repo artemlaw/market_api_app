@@ -770,12 +770,14 @@ def update_prices_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
         basket_price = values.get('basket_price', 0)
         # sp = round(basket_price / price, 2)
         spp = 100 - math.floor(basket_price / price * 100)
+        if spp >= 100:
+            spp = 0
         # Создаем строку для DataFrame
-        row = [key, price, discount, shop_price, basket_price, spp]
+        row = [key, shop_price, discount, price, basket_price, spp]
         rows.append(row)
 
     # Создаем DataFrame
-    columns = ['NmID', 'Цена до скидки', 'Скидка магазина', 'Цена магазина без скидки', 'Цена в корзине', 'СПП']
+    columns = ['NmID', 'Цена до скидки', 'Скидка магазина', 'Цена без скидки', 'Цена в корзине', 'СПП']
 
     df = pd.DataFrame(rows, columns=columns)
     # Преобразование DataFrame в список списков и обновление листа
@@ -832,7 +834,7 @@ if __name__ == '__main__':
     # ym_client = YaMarket(api_key=ym_token)
     # tree = ym_client.get_tree()
     # print(tree)
-    # file_settings, table_id, sheet_in, sheet_out = "", "", "", ""
+    file_settings, table_id, sheet_in, sheet_out = "", "", "", ""
     # update_stocks_in_tabs(file_settings, table_id, sheet_in, sheet_out)
 
-    update_prices_in_tabs()
+    update_prices_in_tabs(file_settings, table_id, sheet_in, sheet_out)
