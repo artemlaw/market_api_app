@@ -132,13 +132,22 @@ def get_stocks_info(sizes: list) -> tuple:
 def get_prices_info(sizes: list) -> dict:
     shop_price = 0
     basket_price = 0
+    fbs_stock = 0
+    fbo_stock = 0
 
     for size in sizes:
         price = size.get('price', {})
         shop_price = price.get('basic', 0) / 100
         basket_price = price.get('product', 0) / 100
+        stocks = size.get('stocks')
+        for stock in stocks:
+            wh_id = stock.get('wh')
+            if wh_id == 119261 or wh_id == 302088:
+                fbs_stock += stock.get('qty')
+            else:
+                fbo_stock += stock.get('qty')
 
-    return {'shop_price': shop_price, 'basket_price': basket_price}
+    return {'shop_price': shop_price, 'basket_price': basket_price, 'fbs_stock': fbs_stock, 'fbo_stock': fbo_stock}
 
 
 def get_cards_details(client: MoySklad, nm_ids: str) -> list:

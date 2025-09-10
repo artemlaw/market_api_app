@@ -1,5 +1,3 @@
-import math
-
 import pandas as pd
 from market_api_app import MoySklad, YaMarket, Ozon, WB, ExcelStyle, get_api_keys
 from market_api_app.utils import add_regions_sum_immutable
@@ -746,15 +744,16 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
 
 
 # def update_prices_in_tabs(file_settings: str, table_key: str, sheet_in: str, sheet_out: str):
-def update_prices_in_tabs(file_settings: str, table_key: str, sheet_in: str, sheet_out: str):
+def update_prices_in_tabs(file_settings: str, table_key: str, sheet_out: str):
     wb_table = get_table(file_settings, table_key)
-    nm_ids = get_column_values_by_index(wb_table, sheet_in, 4)
-    # nm_ids = [149751990,]
 
     ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
     ms_client = MoySklad(api_key=ms_token)
     wb_client = WB(api_key=wb_token)
     wb_prices = get_price_dict(wb_client)
+
+    nm_ids = list(wb_prices.keys())
+
     cards_prices = {key: {'discount': wb_prices.get(key, {}).get('discount', 0),
                           'price': wb_prices.get(key, {}).get('price', 0), **value} for key, value
                     in get_cards_prices(ms_client, nm_ids).items()}
@@ -768,16 +767,19 @@ def update_prices_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
         discount = values.get('discount', 0)
         shop_price = values.get('shop_price', 0)
         basket_price = values.get('basket_price', 0)
-        # sp = round(basket_price / price, 2)
-        spp = 100 - math.floor(basket_price / price * 100)
+        fbs_stock = values.get('fbs_stock', 0)
+        fbo_stock = values.get('fbo_stock', 0)
+        spp = round((1 - round(basket_price / price, 2)) * 100, 1)
+        # spp = 100 - math.floor(basket_price / price * 100)
         if spp >= 100:
             spp = 0
         # Создаем строку для DataFrame
-        row = [key, shop_price, discount, price, basket_price, spp]
+        row = [key, shop_price, discount, price, basket_price, spp, fbs_stock, fbo_stock]
         rows.append(row)
 
     # Создаем DataFrame
-    columns = ['NmID', 'Цена до скидки', 'Скидка магазина', 'Цена без скидки', 'Цена в корзине', 'СПП']
+    columns = ['NmID', 'Цена до скидки', 'Скидка магазина', 'Цена без скидки', 'Цена в корзине', 'СПП', 'FBS остаток',
+               'FBO остаток']
 
     df = pd.DataFrame(rows, columns=columns)
     # Преобразование DataFrame в список списков и обновление листа
