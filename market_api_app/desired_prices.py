@@ -744,7 +744,7 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
 
 
 def update_prices_in_tabs(file_settings: str, table_key: str, sheet_out: str):
-    # wb_table = get_table(file_settings, table_key)
+    wb_table = get_table(file_settings, table_key)
 
     ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
     ms_client = MoySklad(api_key=ms_token)
