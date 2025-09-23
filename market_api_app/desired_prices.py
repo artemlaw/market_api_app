@@ -696,7 +696,7 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
 
     stocks_data = add_regions_sum_immutable(stocks_data_, ['Котовск WB', 'Волгоградская обл.WB',
                                                            'Екатеринбург WB', 'Воронеж WB', 'Краснодар WB',
-                                                           'Волгоградская обл.WB', 'Новосибирск WB', 'Невинномысск WB'])
+                                                           'Новосибирск WB', 'Невинномысск WB'])
 
     # Сбор всех уникальных ключей из массивов словарей
     unique_keys = set(key for _, _, dicts in stocks_data.values() for d in dicts for key in d)
@@ -743,9 +743,8 @@ def update_stocks_in_tabs(file_settings: str, table_key: str, sheet_in: str, she
     print(f"Данные успешно сохранены на лист в таблице '{wb_table}'.")
 
 
-# def update_prices_in_tabs(file_settings: str, table_key: str, sheet_in: str, sheet_out: str):
 def update_prices_in_tabs(file_settings: str, table_key: str, sheet_out: str):
-    wb_table = get_table(file_settings, table_key)
+    # wb_table = get_table(file_settings, table_key)
 
     ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
     ms_client = MoySklad(api_key=ms_token)
@@ -757,7 +756,8 @@ def update_prices_in_tabs(file_settings: str, table_key: str, sheet_out: str):
     cards_prices = {key: {'discount': wb_prices.get(key, {}).get('discount', 0),
                           'price': wb_prices.get(key, {}).get('price', 0), **value} for key, value
                     in get_cards_prices(ms_client, nm_ids).items()}
-    #TODO: Сделать формулу расчета спп, убрать из async функционал.
+
+    # TODO: Сделать формулу расчета спп, убрать из async функционал.
 
     # Преобразование данных
     rows = []
@@ -769,7 +769,10 @@ def update_prices_in_tabs(file_settings: str, table_key: str, sheet_out: str):
         basket_price = values.get('basket_price', 0)
         fbs_stock = values.get('fbs_stock', 0)
         fbo_stock = values.get('fbo_stock', 0)
-        spp = round((1 - round(basket_price / price, 2)) * 100, 1)
+        if price == 0:
+            spp = 0
+        else:
+            spp = round((1 - round(basket_price / price, 2)) * 100, 1)
         # spp = 100 - math.floor(basket_price / price * 100)
         if spp >= 100:
             spp = 0
@@ -836,7 +839,12 @@ if __name__ == '__main__':
     # ym_client = YaMarket(api_key=ym_token)
     # tree = ym_client.get_tree()
     # print(tree)
-    file_settings, table_id, sheet_in, sheet_out = "", "", "", ""
+
     # update_stocks_in_tabs(file_settings, table_id, sheet_in, sheet_out)
 
-    update_prices_in_tabs(file_settings, table_id, sheet_in, sheet_out)
+    update_prices_in_tabs("", "", "")
+
+    # ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
+    # ms_client = MoySklad(api_key=ms_token)
+    # wb_client = WB(api_key=wb_token)
+    # wb_stocks = wb_client.get_stocks_report("2025-09-15", "2025-09-15")
