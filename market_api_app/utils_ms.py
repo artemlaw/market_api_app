@@ -150,7 +150,7 @@ def get_prices_info(sizes: list) -> dict:
     return {'shop_price': shop_price, 'basket_price': basket_price, 'fbs_stock': fbs_stock, 'fbo_stock': fbo_stock}
 
 
-def get_cards_details(client: MoySklad, nm_ids: str) -> list:
+def get_cards_details(client: MoySklad, nm_ids: str, dest: str = '-1257786') -> list:
     """Получение данных корзины"""
     # url = 'https://card.wb.ru/cards/v2/detail'
     url = 'https://card.wb.ru/cards/v4/detail'
@@ -158,15 +158,22 @@ def get_cards_details(client: MoySklad, nm_ids: str) -> list:
         'Accept': '*/*',
         'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
         'Connection': 'keep-alive',
-        'sec-ch-ua': '"Chromium";v="134", "Google Chrome";v="134", "Not:A-Brand";v="24"',
+        'sec-ch-ua': '"Chromium";v="140", "Google Chrome";v="140", "Not:A-Brand";v="24"',
         'sec-ch-ua-mobile': '?0',
         'sec-ch-ua-platform': '"Windows"',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                      'Chrome/134.0.0.0 Safari/537.36'
+                      'Chrome/140.0.0.0 Safari/537.36'
     }
+    # 'dest': '12358062' - Краснодар
+    # 'dest': '-1257786' - Москва
+    # 'dest': '123589409' - Екатеринбург
+    # 'dest': '-364763' - Новосибирск
+    # 'dest': '-2133462' - Казань
+    # 'dest': '123589328' - Подольск
+
     params = {
         'curr': 'rub',
-        'dest': '-1257786',
+        'dest': dest,
         'appType': '1',
         'spp': '30',
         'nm': nm_ids,
@@ -221,6 +228,23 @@ def get_stocks_by_size(sizes: list, wh: dict) -> tuple:
     return fbs_stock, fbo_stock, stock_list
 
 
+def get_stocks_by_full_stocks(full_stocks: dict, wh: dict) -> tuple:
+    fbs_stock = 0
+    fbo_stock = 0
+    stock_list = []
+
+    for wh_id, stock, in full_stocks.items():
+        # Подольск 3 - 302088
+        if wh_id == 119261 or wh_id == 302088:
+            fbs_stock += stock
+            stock_list.append({'FBS': stock})
+        else:
+            fbo_stock += stock
+            stock_list.append({wh.get(wh_id, {}).get('name', 'FBO'): stock})
+
+    return fbs_stock, fbo_stock, stock_list
+
+
 def get_stocks_wh(client: MoySklad, nm_list: list) -> dict:
     cards = get_cards(client, nm_list)
     offices = get_warehouses(client)
@@ -241,6 +265,61 @@ def get_cards(client: MoySklad, nn_list: list, max_portion: int = 100) -> list:
     return results
 
 
+def aggregate_stocks(card_data):
+    stocks = {}
+    for size in card_data.get('sizes', []):
+        for stock in size.get('stocks', []):
+            if (wh := stock.get('wh')) is not None:
+                stocks[wh] = stocks.get(wh, 0) + stock.get('qty', 0)
+    return stocks
+
+
+def get_cards_by_dist(client: MoySklad, nn_list: list, max_portion: int = 100) -> dict:
+    # ПВЗ дистанции
+    # 'dest': '-1257786' - Москва
+    # 'dest': '123589328' - Подольск
+    # 'dest': '123585769' - Котовск
+    # 'dest': '-4039473' - Волгоград
+    # 'dest': '123589409' - Екатеринбург
+    # 'dest': '12358283' - Воронеж
+    # 'dest': '12358062' - Краснодар
+    # 'dest': '-364763' - Новосибирск
+    # 'dest': '123585553' - Невинномысск
+    # 'dest': '-2133462' - Казань
+
+    # TODO: Добавить дополнительные точки
+    dest_tuple = ('-1257786', '123589328', '123585769', '-4039473', '123589409', '12358283', '12358062', '-364763',
+                  '123585553', '-2133462')
+    results = {}
+
+    for i in range(0, len(nn_list), max_portion):
+        portion = ';'.join(map(str, nn_list[i:i + max_portion]))
+        result_dict = {}
+
+        for dest in dest_tuple:
+            cards = get_cards_details(client, portion, dest)
+            if cards:
+                if dest == '-1257786':
+                    for card in cards:
+                        card_copy = card.copy()
+                        card_copy['full_stocks'] = aggregate_stocks(card_copy)
+                        # Добавляем элемент в результат
+                        if 'id' in card_copy:
+                            result_dict[card_copy['id']] = card_copy
+                else:
+                    for card in cards:
+                        card_copy = card.copy()
+                        full_stocks = aggregate_stocks(card_copy)
+                        if 'id' in card_copy:
+                            prev_card_full_stocks = result_dict.get(card_copy['id'], {}).get('full_stocks', {})
+                            if prev_card_full_stocks:
+                                prev_card_full_stocks.update(full_stocks)
+                            result_dict[card_copy['id']]['full_stocks'] = prev_card_full_stocks
+        if result_dict:
+            results.update(result_dict)
+    return results
+
+
 def get_cards_stocks(client: MoySklad, nn_list: list):
     print("WB: Получение остатка из корзины")
     cards = get_cards(client, [int(product['code']) for product in nn_list])
@@ -257,6 +336,17 @@ def get_cards_prices(client: MoySklad, nn_list: list):
         print('Не удалось получить данные по корзине.')
         return {}
     return {int(card['id']): get_prices_info(card['sizes']) for card in cards}
+
+
+def get_stocks_wh_full(client: MoySklad, nm_list: list) -> dict:
+    print("WB: Получение остатков из корзины")
+    cards = get_cards_by_dist(client, nm_list)
+    offices = get_warehouses(client)
+    warehouses = {warehouse['id']: warehouse for warehouse in offices}
+    if not cards:
+        print('Не удалось получить данные по корзине.')
+        return {}
+    return {str(card_id): get_stocks_by_full_stocks(card['full_stocks'], warehouses) for card_id, card in cards.items()}
 
 
 def get_ms_products_for_wb(client: MoySklad, fbo_stock: bool = False, limiter_list: list = None) -> dict:

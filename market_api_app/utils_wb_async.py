@@ -6,7 +6,7 @@ import numpy as np
 import logging
 
 from market_api_app import get_api_keys, MoySklad, ExcelStyle
-from market_api_app.utils_ms import get_ms_products_for_wb, get_stocks_info
+from market_api_app.utils_ms import get_ms_products_for_wb, get_stocks_info, get_prices_info
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('WB ASYNC')
@@ -120,10 +120,51 @@ async def get_wb_fbo_stock():
         return path_xls_file
 
 
+async def get_wb_prices(nn_list: list):
+    update_data = []
+    ms_token = get_api_keys(["MS_API_TOKEN"])[0]
+    ms_client = MoySklad(api_key=ms_token)
+
+    ms_wb_products = get_ms_products_for_wb(ms_client)
+    # nn_list = list(ms_wb_products.keys())
+    logger.info(f'Исход: {len(nn_list)}')
+    products = await get_cards_async(nn_list)
+    print('WB: Получение остатка по товарам FBO')
+    logger.info(f'Результат: {len(products)}')
+
+    for prod in products:
+        shop_price, basket_price = get_prices_info(prod.get('sizes'))
+
+        if shop_price:
+            nm_id = prod.get('id')
+            web_url = f'https://www.wildberries.ru/catalog/{nm_id}/detail.aspx'
+            cost_one = ms_wb_products[nm_id].get('PRIME_COST', 0.0)
+            product_name = ms_wb_products[nm_id].get('NAME', 'БЕЗ ИМЕНИ')
+            shop_price = round(shop_price, 2)
+            basket_price = round(basket_price, 2)
+            # if fbs_stock > 0:
+            #     print(f'{nm_id} - FBS {fbs_stock} - FBO {fbo_stock}')
+            update_data.append([product_name, nm_id, web_url, cost_one, shop_price, basket_price])
+
+    if update_data:
+        # Заголовки столбцов
+        columns = ['Наименование', 'nm_id', 'Ссылка', 'Себестоимость', 'Цена без скидки (корзина)', 'Цена со скидкой (корзина)']
+        df = pd.DataFrame(update_data, columns=columns)
+        # df = pd.DataFrame(update_data)
+        # df.loc['Итого'] = df[['Себестоимость', 'FBO остаток', 'Полная себестоимость']].sum()
+        # df.loc['Итого', ['Наименование', 'nm_id', 'Ссылка']] = ['Итого', np.nan, '']
+
+        path_xls_file = 'wb_fbo_stock.xlsx'
+        style = ExcelStyle()
+        style.style_dataframe(df, path_xls_file, "Остаток FBO")
+        print("Файл отчета готов")
+        return path_xls_file
+
+
 if __name__ == '__main__':
     async def main():
         if platform.system() == 'Windows':
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        await get_wb_fbo_stock()
+        await get_wb_prices([149751990,])
 
     asyncio.run(main())

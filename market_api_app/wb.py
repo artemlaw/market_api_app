@@ -104,3 +104,22 @@ class WB(ApiBase):
         if not result:
             logger.error('Не удалось получить данные о складах.')
         return response_json
+
+    def get_stocks_report(self, from_date="2025-09-15", to_date="2025-09-15", nm_ids=None) -> dict:
+        if nm_ids is None:
+            nm_ids = []
+        url = f'https://seller-analytics-api.{self.domain}/api/v2/stocks-report/offices'
+        params = {
+            "nmIDs": nm_ids,
+            "currentPeriod": {
+                "start": from_date,
+                "end": to_date
+            },
+            "stockType": "",
+            "skipDeletedNm": False
+        }
+        result = self.post(url, params)
+        response_json = result.json() if result else {}
+        if not result:
+            logger.error('Не удалось получить данные о категориях.')
+        return response_json

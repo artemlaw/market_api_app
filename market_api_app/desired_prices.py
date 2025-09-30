@@ -3,7 +3,7 @@ from market_api_app import MoySklad, YaMarket, Ozon, WB, ExcelStyle, get_api_key
 from market_api_app.utils import add_regions_sum_immutable
 from market_api_app.utils_gs import get_table, get_column_values_by_index
 from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb, \
-    get_stocks_wh, get_cards_prices
+    get_stocks_wh, get_cards_prices, get_stocks_wh_full
 from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order, print_oz_constants, get_oz_data_for_article
 from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article, \
     wb_get_orders, get_order_data
@@ -756,9 +756,6 @@ def update_prices_in_tabs(file_settings: str, table_key: str, sheet_out: str):
     cards_prices = {key: {'discount': wb_prices.get(key, {}).get('discount', 0),
                           'price': wb_prices.get(key, {}).get('price', 0), **value} for key, value
                     in get_cards_prices(ms_client, nm_ids).items()}
-
-    # TODO: Сделать формулу расчета спп, убрать из async функционал.
-
     # Преобразование данных
     rows = []
     for key, values in cards_prices.items():
@@ -812,9 +809,69 @@ def get_wb_orders(from_date: str, to_date: str):
     return len(orders)
 
 
+def update_stocks_in_tabs_v2(file_settings: str, table_key: str, sheet_in: str, sheet_out: str):
+    wb_table = get_table(file_settings, table_key)
+    ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
+    ms_client = MoySklad(api_key=ms_token)
+    # wb_client = WB(api_key=wb_token)
+    # wb_prices = get_price_dict(wb_client)
+
+    nm_ids = get_column_values_by_index(wb_table, sheet_in, 4)
+    # nm_ids = list(wb_prices.keys())
+
+    stocks_data_ = get_stocks_wh_full(ms_client, nm_ids)
+    stocks_data = add_regions_sum_immutable(stocks_data_, ['Котовск WB', 'Волгоградская обл.WB',
+                                                           'Екатеринбург WB', 'Воронеж WB', 'Краснодар WB',
+                                                           'Новосибирск WB', 'Невинномысск WB'])
+
+    # Сбор всех уникальных ключей из массивов словарей
+    unique_keys = set(key for _, _, dicts in stocks_data.values() for d in dicts for key in d)
+    # Вычисление суммы значений для каждого уникального ключа
+    key_sums = {}
+    for _, _, dicts in stocks_data.values():
+        for d in dicts:
+            for k, v in d.items():
+                key_sums[k] = key_sums.get(k, 0) + v
+
+    sorted_keys = ["FBS", "Екатеринбург WB", "Регионы"] + sorted((key for key in unique_keys if key != "FBS"
+                                                                  and key != "Екатеринбург WB" and key != "Регионы"),
+                                                                 key=lambda x: -key_sums[x])
+    # Преобразование данных
+    rows = []
+    for key, values in stocks_data.items():
+        # Извлекаем элементы кортежа
+        first_value = values[0]
+        second_value = values[1]
+        dict_list = values[2]
+
+        # Создаем строку для DataFrame
+        row = [key, first_value, second_value]
+        # Добавляем значения для каждого уникального ключа
+        for uk in sorted_keys:
+            # Ищем значение для текущего уникального ключа
+            value = 0  # Значение по умолчанию
+            for d in dict_list:
+                if uk in d:
+                    value = d[uk]
+                    break
+            row.append(value)
+        rows.append(row)
+
+    # Создаем DataFrame
+    columns = ['NmID', 'FBS остаток', 'FBO остаток'] + sorted_keys
+    df = pd.DataFrame(rows, columns=columns)
+
+    # Преобразование DataFrame в список списков и обновление листа
+    data = [df.columns.values.tolist()] + df.values.tolist()
+    sheet = wb_table.worksheet(sheet_out)
+    sheet.clear()
+    sheet.update(range_name="A1", values=data)
+    print(f"Данные успешно сохранены на лист в таблице '{wb_table}'.")
+
+
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    # ya = get_ym_profitability('21-08-2025', '21-08-2025', plan_margin=28.0, fbs=True)
+    # ya = get_ym_profitability('24-09-2025', '25-09-2025', plan_margin=28.0, fbs=True)
     # print(ya)
     # oz = get_oz_profitability('04-06-2025', '05-06-2025', plan_margin=28.0)
     # oz = get_oz_desired_prices(plan_margin=28.0)
@@ -842,7 +899,7 @@ if __name__ == '__main__':
 
     # update_stocks_in_tabs(file_settings, table_id, sheet_in, sheet_out)
 
-    update_prices_in_tabs("", "", "")
+    update_stocks_in_tabs_v2("", "", "", "")
 
     # ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
     # ms_client = MoySklad(api_key=ms_token)
