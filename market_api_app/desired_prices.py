@@ -871,8 +871,8 @@ def update_stocks_in_tabs_v2(file_settings: str, table_key: str, sheet_in: str, 
 
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    # ya = get_ym_profitability('24-09-2025', '25-09-2025', plan_margin=28.0, fbs=True)
-    # print(ya)
+    ya = get_ym_profitability('24-09-2025', '25-09-2025', plan_margin=28.0, fbs=True)
+    print(ya)
     # oz = get_oz_profitability('04-06-2025', '05-06-2025', plan_margin=28.0)
     # oz = get_oz_desired_prices(plan_margin=28.0)
     # print(oz)
@@ -899,7 +899,7 @@ if __name__ == '__main__':
 
     # update_stocks_in_tabs(file_settings, table_id, sheet_in, sheet_out)
 
-    update_stocks_in_tabs_v2("", "", "", "")
+    # update_stocks_in_tabs_v2("", "", "", "")
 
     # ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
     # ms_client = MoySklad(api_key=ms_token)

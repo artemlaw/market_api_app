@@ -172,6 +172,11 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
     return commission_dict
 
 
+def sum_amounts(items):
+    """Возвращает сумму всех amount в списке словарей."""
+    return sum(item['amount'] for item in items) if items else 0
+
+
 def get_ym_orders(ym_client: YaMarket, campaign_id: int = 0, from_date='12-12-2024', to_date='13-12-2024'):
     print('ЯндексМаркет: Получение заказов')
     ym_orders = ym_client.get_orders(campaign_id, from_date, to_date)
@@ -180,7 +185,7 @@ def get_ym_orders(ym_client: YaMarket, campaign_id: int = 0, from_date='12-12-20
             'order_number': order.get('id', 99999999999),
             'created': order.get('creationDate', ''),
             'article': position.get('offerId', ''),
-            'price': position.get('price', 0.0) + position.get('subsidy', 0.0),
+            'price': position.get('price', 0.0) + sum_amounts(position.get('subsidies', [])),
             'quantity': position.get('count', 0)
         }
         for order in ym_orders
