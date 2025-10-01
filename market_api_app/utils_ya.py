@@ -210,7 +210,7 @@ def get_ya_data_for_article(article, article_data, plan_margin: float = 28.0):
         + article_data.get("EXPRESS_DELIVERY").get("current_amount", 0.0),
         1,
     )
-    delivery_cross_cost = article_data.get("CROSSREGIONAL_DELIVERY", 0.0)
+    delivery_cross_cost = article_data.get("CROSSREGIONAL_DELIVERY", 0.0) + article_data.get("MIDDLE_MILE", 0.0)
     sorting = article_data.get("SORTING", 0.0)
 
     reward = round(
@@ -340,7 +340,7 @@ def get_ya_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
 
     delivery_percent = round(delivery_cost_percent + express_delivery_percent, 3)
 
-    delivery_cross_cost = article_data.get("CROSSREGIONAL_DELIVERY", 0.0)
+    delivery_cross_cost = article_data.get("CROSSREGIONAL_DELIVERY", 0.0) + article_data.get("MIDDLE_MILE", 0.0)
     sorting = article_data.get("SORTING", 0.0)
 
     recommended_price = round(

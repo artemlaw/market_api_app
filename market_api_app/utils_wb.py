@@ -2,6 +2,8 @@ import time
 from market_api_app import WB
 from market_api_app.utils import get_date_for_request
 
+FBS_COMMISSION = 3.5  # Принудительное повышение комиссии FBS на 3.5% над FBO, так как нет по API
+
 
 def find_warehouse_by_name(warehouses: list, name: str) -> dict | None:
     return next((warehouse for warehouse in warehouses if warehouse['warehouseName'] == name), None)
@@ -118,7 +120,7 @@ def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, catego
             f" необходимо обновить данные в Мой склад")
         commission = 30.0
     else:
-        commission = commissions[0] if fbs else commissions[1]
+        commission = commissions[0] + FBS_COMMISSION if fbs else commissions[1]
 
     # logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
     #                           logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
@@ -131,7 +133,10 @@ def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, catego
 
     reward = round(commission_cost + acquiring_cost + logistics, 1)
     profit = round(price - prime_cost - reward, 1)
-    profitability = round(profit / price * 100, 1)
+    if price == 0:
+        profitability = 0
+    else:
+        profitability = round(profit / price * 100, 1)
 
     recommended_price = calculate_recommended_price(prime_cost, logistics, plan_margin, commission, acquiring)
 
@@ -204,7 +209,7 @@ def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: flo
         print('Не удалось определить комиссию по категории', category, 'по умолчанию указал 30%')
         commission = 30.0
     else:
-        commission = commissions[0] if fbs else commissions[1]
+        commission = commissions[0] + FBS_COMMISSION if fbs else commissions[1]
 
     volume = product.get('VOLUME', 0.0)
     # logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
