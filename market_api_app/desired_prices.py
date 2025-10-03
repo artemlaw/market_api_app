@@ -437,6 +437,20 @@ def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     return path_xls_file
 
 
+def get_null_nm_id(order_nm_id):
+    print(f'Номенклатура которая есть на WB, но не связана в МС: {order_nm_id}')
+    return {
+        "STOCK": 0.0,
+        "STOCK_FBS": 0,
+        "STOCK_FBO": 0,
+        "PRIME_COST": 0.0,
+        "NAME": "Нет данных в МС",
+        "ARTICLE": "Нет данных в МС",
+        "CATEGORY": "",
+        "VOLUME": 1
+    }
+
+
 def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0, acquiring: float = 1.6,
                          one_fbs: bool = False, save_to_gs: bool = False, save_to_tab: bool = False,
                          file_settings: str = None, table_key: str = None, sheet_out: str = None):
@@ -469,7 +483,7 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
                 data_for_report.append(
                     get_order_data(
                         order,
-                        ms_products_with_stocks[order.get('nmId')],
+                        ms_products_with_stocks.get(order.get('nmId'), get_null_nm_id(order.get('nmId'))),
                         base_dict,
                         plan_margin=plan_margin,
                         acquiring=acquiring,
@@ -871,16 +885,16 @@ def update_stocks_in_tabs_v2(file_settings: str, table_key: str, sheet_in: str, 
 
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    ya = get_ym_profitability('24-09-2025', '25-09-2025', plan_margin=28.0, fbs=True)
-    print(ya)
+    # ya = get_ym_profitability('24-09-2025', '25-09-2025', plan_margin=28.0, fbs=True)
+    # print(ya)
     # oz = get_oz_profitability('04-06-2025', '05-06-2025', plan_margin=28.0)
     # oz = get_oz_desired_prices(plan_margin=28.0)
     # print(oz)
 
-    # wb_orders = get_wb_profitability('2025-08-20', '2025-08-21', plan_margin=28.0, acquiring=1.6,
-    #                                  one_fbs=True)
-    # # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
-    # print(wb_orders)
+    wb_orders = get_wb_profitability('2025-10-03', '2025-10-03', plan_margin=28.0, acquiring=1.6,
+                                     one_fbs=True)
+    # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
+    print(wb_orders)
 
     # client = MoySklad(api_key='')
     # stocks_data = get_stocks_wh(client, [251840861,])
