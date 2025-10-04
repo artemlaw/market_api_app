@@ -206,7 +206,7 @@ def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: flo
     category = product.get('CATEGORY', '')
     commissions = base_dict.get('category_dict', {}).get(category)
     if not commissions:
-        print('Не удалось определить комиссию по категории', category, 'по умолчанию указал 30%')
+        print(f'Не удалось определить комиссию для {nm_id} по категории {category} по умолчанию указал 30%')
         commission = 30.0
     else:
         commission = commissions[0] + FBS_COMMISSION if fbs else commissions[1]

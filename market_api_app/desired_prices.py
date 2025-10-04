@@ -479,11 +479,13 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     not_in_ms = []
     for orders, is_fbs in [(orders_fbo, False), (orders_fbs, True)]:
         for order in orders:
-            if order.get('nmId') in nm_ids_list:
+            # Для переопределения значения по умолчанию можно использовать get_null_nm_id(order.get('nmId'))
+            product_dict = ms_products_with_stocks.get(order.get('nmId'), {})
+            if product_dict and order.get('nmId') in nm_ids_list:
                 data_for_report.append(
                     get_order_data(
                         order,
-                        ms_products_with_stocks.get(order.get('nmId'), get_null_nm_id(order.get('nmId'))),
+                        product_dict,
                         base_dict,
                         plan_margin=plan_margin,
                         acquiring=acquiring,
@@ -892,7 +894,7 @@ if __name__ == '__main__':
     # print(oz)
 
     wb_orders = get_wb_profitability('2025-10-03', '2025-10-03', plan_margin=28.0, acquiring=1.6,
-                                     one_fbs=True)
+                                     one_fbs=True, save_to_tab=True)
     # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
     print(wb_orders)
 
