@@ -2,7 +2,7 @@ import time
 from market_api_app import WB
 from market_api_app.utils import get_date_for_request
 
-FBS_COMMISSION = 3.5  # Принудительное повышение комиссии FBS на 3.5% над FBO, так как нет по API
+FBS_COMMISSION = 0.0  # Принудительное повышение комиссии FBS на 0.0% над FBO, так как нет по API
 
 
 def find_warehouse_by_name(warehouses: list, name: str) -> dict | None:
@@ -190,6 +190,8 @@ def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: flo
                                           warehouse_name=order.get('warehouseName', 'Подольск'))
 
     nm_id = order.get('nmId', '')
+    # if nm_id == 008011159:
+    #     print('Test')
     # Получение цены
     price = float(wb_prices_dict.get(nm_id, {}).get('price', 0.0))
     if not price:
