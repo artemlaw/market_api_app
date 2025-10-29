@@ -75,7 +75,6 @@ def create_prices_dict(prices_list: list) -> dict:
     return prices_dict
 
 
-# TODO: WB - Проверять на актуальность расчет логистики
 def get_logistics(ktr: float, tariff_for_base_l: float, tariff_base: float, tariff_over_base: float,
                   wh_coefficient: float, volume: float) -> float:
     volume_calc = max(volume - tariff_base, 0)
@@ -85,10 +84,30 @@ def get_logistics(ktr: float, tariff_for_base_l: float, tariff_base: float, tari
     return logistics
 
 
-def get_logistics_new(ktr: float, tariff_base: float, logistics_first_liter: float, logistics_extra_liter: float,
+def get_logistics_for_one_liter(ktr: float, logistics_first_liter: float, logistics_extra_liter: float, volume: float) -> float:
+    volume_calc = max(volume - 1, 0)
+    return round((logistics_first_liter + logistics_extra_liter * volume_calc) * ktr, 2)
+
+
+# TODO: WB - Проверять на актуальность расчет логистики
+def get_logistics_new(ktr: float, logistics_first_liter: float, logistics_extra_liter: float,
                       volume: float) -> float:
-    volume_calc = max(volume - tariff_base, 0)
-    logistics = round((logistics_first_liter * tariff_base + logistics_extra_liter * volume_calc) * ktr, 2)
+    """
+    Тариф на логистику
+    от 0,001 до 0,200 литра — 23₽ за литр;
+    от 0,201 до 0,400 литра — 26₽ за литр;
+    от 0,401 до 0,600 литра — 29₽ за литр;
+    от 0,601 до 0,800 литра — 30₽ за литр;
+    от 0,801 до 1,000 литра — 32₽ за литр.
+
+    Для товаров с объёмом более 1 литра:
+    стоимость первого литра 46₽,
+    стоимость каждого дополнительного литра 14₽.
+    """
+
+    volume_steps = [(0.2, 23.0), (0.4, 26.0), (0.6, 29.0), (0.8, 30.0), (1.0, 32.0)]
+    logistics = next((value for step, value in volume_steps if volume >= step),
+                     get_logistics_for_one_liter(ktr, logistics_first_liter, logistics_extra_liter, volume))
     return logistics
 
 
@@ -124,9 +143,9 @@ def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, catego
 
     # logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
     #                           logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
-    logistics = get_logistics_new(ktr=logistic_dict['KTR'], tariff_base=logistic_dict['TARIFF_BASE'],
+    logistics = get_logistics_new(ktr=logistic_dict['KTR'], volume=volume,
                                   logistics_first_liter=logistic_dict['LOGISTICS_FIRST_LITER'],
-                                  logistics_extra_liter=logistic_dict['LOGISTICS_EXTRA_LITER'], volume=volume)
+                                  logistics_extra_liter=logistic_dict['LOGISTICS_EXTRA_LITER'])
 
     commission_cost = round(commission / 100 * price, 1)
     acquiring_cost = round(acquiring / 100 * price, 1)
@@ -216,9 +235,9 @@ def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: flo
     volume = product.get('VOLUME', 0.0)
     # logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
     #                           logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
-    logistics = get_logistics_new(ktr=logistic_dict['KTR'], tariff_base=logistic_dict['TARIFF_BASE'],
+    logistics = get_logistics_new(ktr=logistic_dict['KTR'], volume=volume,
                                   logistics_first_liter=logistic_dict['LOGISTICS_FIRST_LITER'],
-                                  logistics_extra_liter=logistic_dict['LOGISTICS_EXTRA_LITER'], volume=volume)
+                                  logistics_extra_liter=logistic_dict['LOGISTICS_EXTRA_LITER'])
 
     commission_cost = round(commission / 100 * price, 1)
     acquiring_cost = round(acquiring / 100 * price, 1)

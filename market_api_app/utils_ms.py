@@ -151,39 +151,42 @@ def get_prices_info(sizes: list) -> dict:
 
 
 def get_cards_details(client: MoySklad, nm_ids: str, dest: str = '-1257786') -> list:
-    """Получение данных корзины"""
-    # url = 'https://card.wb.ru/cards/v2/detail'
-    url = 'https://card.wb.ru/cards/v4/detail'
-    headers = {
-        'Accept': '*/*',
-        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Connection': 'keep-alive',
-        'sec-ch-ua': '"Chromium";v="140", "Google Chrome";v="140", "Not:A-Brand";v="24"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                      'Chrome/140.0.0.0 Safari/537.36'
-    }
-    # 'dest': '12358062' - Краснодар
-    # 'dest': '-1257786' - Москва
-    # 'dest': '123589409' - Екатеринбург
-    # 'dest': '-364763' - Новосибирск
-    # 'dest': '-2133462' - Казань
-    # 'dest': '123589328' - Подольск
+    """
+    Получение данных корзины
+    'dest': '12358062' - Краснодар
+    'dest': '-1257786' - Москва
+    'dest': '123589409' - Екатеринбург
+    'dest': '-364763' - Новосибирск
+    'dest': '-2133462' - Казань
+    'dest': '123589328' - Подольск
+    """
 
-    params = {
-        'curr': 'rub',
-        'dest': dest,
-        'appType': '1',
-        'spp': '30',
-        'nm': nm_ids,
+    # url = 'https://card.wb.ru/cards/v4/detail'
+    url = (f'https://u-card.wb.ru/cards/v4/detail?appType=1&curr=rub&dest={dest}&spp=30&hide_dtype=11&ab_testing=false'
+           f'&ab_testing=false&lang=ru&nm={nm_ids}')
+
+    headers = {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;"
+                  "q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+        "cache-control": "max-age=0",
+        "priority": "u=0, i",
+        "sec-ch-ua": '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "none",
+        "sec-fetch-user": "?1",
+        "upgrade-insecure-requests": "1"
     }
+
     client.headers = headers
-    result = client.get(url=url, params=params)
+    # result = client.get(url=url, params=params)
+    result = client.get(url=url)
     response_json = result.json() if result else []
     if not result:
         print('Не удалось получить данные по корзине.')
-    # return response_json.get('data', {}).get('products', [])
     return response_json.get('products', [])
 
 
