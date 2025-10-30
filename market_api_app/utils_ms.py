@@ -296,8 +296,9 @@ def get_cards_by_dist(client: MoySklad, nn_list: list, max_portion: int = 100) -
                   '123585553', '-2133462')
     results = {}
     nn_list_len = len(nn_list)
-    step = round(nn_list_len / max_portion) * 10
-    print(f'Количество запросов всего: {step}')
+    step = round(nn_list_len / max_portion * 10)
+    logger.info(f'Количество запросов всего: {step}')
+
     for i in range(0, nn_list_len, max_portion):
         portion = ';'.join(map(str, nn_list[i:i + max_portion]))
         result_dict = {}
@@ -305,7 +306,7 @@ def get_cards_by_dist(client: MoySklad, nn_list: list, max_portion: int = 100) -
         for dest in dest_tuple:
             cards = get_cards_details(client, portion, dest)
             step = step - 1
-            print(step)
+            logger.info(f'Осталось запросов: {step}')
             if cards:
                 if dest == '-1257786':
                     for card in cards:
