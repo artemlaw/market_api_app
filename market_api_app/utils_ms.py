@@ -180,11 +180,12 @@ def get_cards_details(client: MoySklad, nm_ids: str, dest: str = '-1257786') -> 
         "sec-fetch-user": "?1",
         "upgrade-insecure-requests": "1"
     }
-
     client.headers = headers
+    client.delay_seconds = 20  # TODO: Определить оптимальное время
     # result = client.get(url=url, params=params)
     result = client.get(url=url)
-    response_json = result.json() if result else []
+    response_json = result.json() if result else {}
+
     if not result:
         print('Не удалось получить данные по корзине.')
     return response_json.get('products', [])
@@ -294,13 +295,17 @@ def get_cards_by_dist(client: MoySklad, nn_list: list, max_portion: int = 100) -
     dest_tuple = ('-1257786', '123589328', '123585769', '-4039473', '123589409', '12358283', '12358062', '-364763',
                   '123585553', '-2133462')
     results = {}
-
-    for i in range(0, len(nn_list), max_portion):
+    nn_list_len = len(nn_list)
+    step = round(nn_list_len / max_portion) * 10
+    print(f'Количество запросов всего: {step}')
+    for i in range(0, nn_list_len, max_portion):
         portion = ';'.join(map(str, nn_list[i:i + max_portion]))
         result_dict = {}
 
         for dest in dest_tuple:
             cards = get_cards_details(client, portion, dest)
+            step = step - 1
+            print(step)
             if cards:
                 if dest == '-1257786':
                     for card in cards:
