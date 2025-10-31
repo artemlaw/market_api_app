@@ -90,8 +90,8 @@ def get_logistics_for_one_liter(ktr: float, logistics_first_liter: float, logist
 
 
 # TODO: WB - Проверять на актуальность расчет логистики
-def get_logistics_new(ktr: float, logistics_first_liter: float, logistics_extra_liter: float,
-                      volume: float) -> float:
+def get_logistics_new(ktr: float, logistics_coefficient: float, logistics_first_liter: float,
+                      logistics_extra_liter: float, volume: float) -> float:
     """
     Тариф на логистику
     от 0,001 до 0,200 литра — 23₽ за литр;
@@ -104,11 +104,22 @@ def get_logistics_new(ktr: float, logistics_first_liter: float, logistics_extra_
     стоимость первого литра 46₽,
     стоимость каждого дополнительного литра 14₽.
     """
+    volume_steps = [
+        (0.001, 0.200, 23.0),
+        (0.201, 0.400, 26.0),
+        (0.401, 0.600, 29.0),
+        (0.601, 0.800, 30.0),
+        (0.801, 0.999, 32.0)
+    ]
 
-    volume_steps = [(0.2, 23.0), (0.4, 26.0), (0.6, 29.0), (0.8, 30.0), (1.0, 32.0)]
-    logistics = next((value for step, value in volume_steps if volume >= step),
-                     get_logistics_for_one_liter(ktr, logistics_first_liter, logistics_extra_liter, volume))
-    return logistics
+    if volume > 1.0:
+        return get_logistics_for_one_liter(ktr, logistics_first_liter, logistics_extra_liter, volume)
+
+    for min_vol, max_vol, value in volume_steps:
+        if min_vol <= volume <= max_vol:
+            return value * logistics_coefficient
+
+    return logistics_first_liter
 
 
 # TODO: WB - Проверять на актуальность расчет рекомендуемой цены
@@ -144,6 +155,7 @@ def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, catego
     # logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
     #                           logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
     logistics = get_logistics_new(ktr=logistic_dict['KTR'], volume=volume,
+                                  logistics_coefficient=logistic_dict['LOGISTICS_COEFFICIENT'],
                                   logistics_first_liter=logistic_dict['LOGISTICS_FIRST_LITER'],
                                   logistics_extra_liter=logistic_dict['LOGISTICS_EXTRA_LITER'])
 
@@ -236,6 +248,7 @@ def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: flo
     # logistics = get_logistics(logistic_dict['KTR'], logistic_dict['TARIFF_FOR_BASE_L'], logistic_dict['TARIFF_BASE'],
     #                           logistic_dict['TARIFF_OVER_BASE'], logistic_dict['WH_COEFFICIENT'], volume)
     logistics = get_logistics_new(ktr=logistic_dict['KTR'], volume=volume,
+                                  logistics_coefficient=logistic_dict['LOGISTICS_COEFFICIENT'],
                                   logistics_first_liter=logistic_dict['LOGISTICS_FIRST_LITER'],
                                   logistics_extra_liter=logistic_dict['LOGISTICS_EXTRA_LITER'])
 
@@ -335,3 +348,9 @@ def wb_get_orders(wb_client: WB, start_of_day: str, end_of_day: str):
     print(f"{'Без отмены':<15}{len(wb_orders) - len(orders_fbs_cancel) - len(orders_fbo_cancel):<10}")
 
     return orders_fbs, orders_fbo, set(nm_ids_fbs), set(nm_ids_fbo)
+
+
+if __name__ == '__main__':
+    test_volumes = [0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1.0, 1.5]
+    for vol in test_volumes:
+        print(f"Объем: {vol}л -> Тариф: {get_logistics_new(ktr=1, volume=vol, logistics_coefficient=1, logistics_first_liter=46, logistics_extra_liter=14)}₽")
