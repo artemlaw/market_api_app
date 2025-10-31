@@ -8,5 +8,5 @@ from .desired_prices import (get_ym_desired_prices, get_ym_profitability, get_oz
                              get_wb_desired_prices, get_wb_profitability, update_stocks_in_tabs, update_prices_in_tabs,
                              update_stocks_in_tabs_v2)
 from .utils_wb_async import get_wb_fbo_stock
-from .wb_v0 import get_wb_first_report, get_wb_first_report
+from .wb_v0 import get_first_report_data, get_wb_first_report
 from .version import __version__
