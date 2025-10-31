@@ -219,11 +219,10 @@ def get_wb_first_report(ms_client, base_dict_, from_date_, to_date_, acquiring: 
     orders_for_report = [get_order_data(order, base_dict_, acquiring) for order in orders
                          if 'Отменен' not in order['state']['name']]
     print('Количество заказов исключая отмены:', len(orders_for_report))
-
+    path_xls_file = 'wb_рентабельность.xlsx'
     if orders_for_report:
         pd.set_option('display.max_columns', None)
         df = pd.DataFrame(orders_for_report)
-        path_xls_file = 'wb_рентабельность.xlsx'
         # Возможно убрать и не хранить общую таблицу
         df.to_excel(path_xls_file, sheet_name='Список', index=False)
         total_df = df.groupby('name').agg({
@@ -336,9 +335,9 @@ def get_wb_first_report(ms_client, base_dict_, from_date_, to_date_, acquiring: 
             ws.freeze_panes = 'B3'
 
         print('Файл отчета готов')
-        files.download(path_xls_file)
     else:
         print('На указанный интервал нет данных для отчета')
+    return path_xls_file
 
 
 def get_first_report_data():
