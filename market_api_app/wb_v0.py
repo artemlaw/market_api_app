@@ -313,7 +313,7 @@ def get_wb_first_report(ms_client, base_dict_, from_date_, to_date_, acquiring: 
                     ws.cell(row=row, column=20).style = tab_styles.cell_l1_spec_style
 
                 for col in columns_to_align_right:
-                    ws.cell(row=row, column=col).alignment = Alignment(horizontal='right')
+                    ws.cell(row=row, column=col).alignment = tab_styles.columns_to_align_right
                     ws.cell(row=row, column=col).number_format = '#,##0.0'  # Формат с одним знаком после запятой
 
             new_header = [
