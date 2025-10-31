@@ -353,4 +353,6 @@ def wb_get_orders(wb_client: WB, start_of_day: str, end_of_day: str):
 if __name__ == '__main__':
     test_volumes = [0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1.0, 1.5]
     for vol in test_volumes:
-        print(f"Объем: {vol}л -> Тариф: {get_logistics_new(ktr=1, volume=vol, logistics_coefficient=1, logistics_first_liter=46, logistics_extra_liter=14)}₽")
+        logistics_vol = get_logistics_new(ktr=1.0, logistics_coefficient=1.0, logistics_first_liter=46.0,
+                                          logistics_extra_liter=14.0, volume=vol)
+        print(f'Объем: {vol}л -> Тариф: {logistics_vol}₽')
