@@ -6,7 +6,7 @@ from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms
     get_stocks_wh, get_cards_prices, get_stocks_wh_full
 from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order, print_oz_constants, get_oz_data_for_article
 from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article, \
-    wb_get_orders, get_order_data
+    wb_get_orders, get_order_data, get_category_subject_id_dict
 from market_api_app.utils_ya import get_category_ids, chunked_offers_list, get_dict_for_commission, \
     get_ya_data_for_article, get_ym_orders, get_ya_data_for_order
 
@@ -766,6 +766,7 @@ def update_prices_in_tabs(file_settings: str, table_key: str, sheet_out: str):
     ms_client = MoySklad(api_key=ms_token)
     wb_client = WB(api_key=wb_token)
     wb_prices = get_price_dict(wb_client)
+    category_dict = get_category_subject_id_dict(wb_client)
 
     nm_ids = list(wb_prices.keys())
 
@@ -782,6 +783,9 @@ def update_prices_in_tabs(file_settings: str, table_key: str, sheet_out: str):
         basket_price = values.get('basket_price', 0)
         fbs_stock = values.get('fbs_stock', 0)
         fbo_stock = values.get('fbo_stock', 0)
+        category_id = values.get('category', '')
+        fbs_commission = category_dict.get(category_id, (0, 0))[0]
+        fbo_commission = category_dict.get(category_id, (0, 0))[1]
         if price == 0:
             spp = 0
         else:
@@ -790,12 +794,13 @@ def update_prices_in_tabs(file_settings: str, table_key: str, sheet_out: str):
         if spp >= 100:
             spp = 0
         # Создаем строку для DataFrame
-        row = [key, shop_price, discount, price, basket_price, spp, fbs_stock, fbo_stock]
+        row = [key, shop_price, discount, price, basket_price, spp, fbs_stock, fbo_stock, fbs_commission,
+               fbo_commission]
         rows.append(row)
 
     # Создаем DataFrame
     columns = ['NmID', 'Цена до скидки', 'Скидка магазина', 'Цена без скидки', 'Цена в корзине', 'СПП', 'FBS остаток',
-               'FBO остаток']
+               'FBO остаток', 'FBS комиссия', 'FBO комиссия']
 
     df = pd.DataFrame(rows, columns=columns)
     # Преобразование DataFrame в список списков и обновление листа
@@ -893,10 +898,10 @@ if __name__ == '__main__':
     # oz = get_oz_desired_prices(plan_margin=28.0)
     # print(oz)
 
-    wb_orders = get_wb_profitability('2025-10-29', '2025-10-30', plan_margin=28.0, acquiring=1.6,
-                                     one_fbs=True, save_to_tab=True)
-    # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
-    print(wb_orders)
+    # wb_orders = get_wb_profitability('2025-10-29', '2025-10-30', plan_margin=28.0, acquiring=1.6,
+    #                                  one_fbs=True, save_to_tab=True)
+    # # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
+    # print(wb_orders)
 
     # client = MoySklad(api_key='')
     # stocks_data = get_stocks_wh(client, [251840861,])
@@ -916,6 +921,8 @@ if __name__ == '__main__':
     # update_stocks_in_tabs(file_settings, table_id, sheet_in, sheet_out)
 
     # update_stocks_in_tabs_v2("", "", "", "")
+
+    update_prices_in_tabs("", "", "")
 
     # ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
     # ms_client = MoySklad(api_key=ms_token)

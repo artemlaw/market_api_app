@@ -55,6 +55,11 @@ def get_category_dict(wb_client: WB) -> dict:
     return {comm['subjectName']: (comm['kgvpMarketplace'], comm['paidStorageKgvp']) for comm in commission['report']}
 
 
+def get_category_subject_id_dict(wb_client: WB) -> dict:
+    commission = wb_client.get_commission()
+    return {comm['subjectID']: (comm['kgvpMarketplace'], comm['paidStorageKgvp']) for comm in commission['report']}
+
+
 def get_price_dict(wb_client: WB) -> dict:
     product_prices = wb_client.get_product_prices()
     # Если несколько размеров, то берет максимальную цену и дисконт

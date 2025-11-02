@@ -8,35 +8,64 @@ from market_api_app.utils_ms import get_attributes_dict, get_volume
 from market_api_app.tabstyle import TabStyles
 
 WAREHOUSE_NAME = 'Маркетплейс: Центральный федеральный округ'
-ACQUIRING = 1.6
 
-# def install_and_import(packages):
-#     import importlib
-#     import subprocess
-#     import sys
-#     # import pkg_resources
-#
-#     # installed_packages = {pkg.key for pkg in pkg_resources.working_set}
-#
-#     installed_packages = {dist.metadata["Name"] for dist in importlib.metadata.distributions()}
-#
-#     for package in packages:
-#         if package not in installed_packages:
-#             subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
-#         globals()[package] = importlib.import_module(package)
-#
-# # Список необходимых библиотек
-# required_packages = ['ipywidgets', 'requests']
-#
-# # Проверяем и устанавливаем необходимые библиотеки
-# install_and_import(required_packages)
+'''
+Использовать в Colab в виде:
+import ipywidgets as widgets
+from datetime import datetime, timedelta
+from IPython.display import display
+from google.colab import files
 
-# import ipywidgets as widgets
-# from datetime import datetime, timedelta
-# from IPython.display import display
-# from openpyxl.styles import Alignment
-# from openpyxl.styles import NamedStyle, Font, PatternFill, Border, Side
-# from google.colab import files
+from market_api_app import get_first_report_data, get_wb_first_report
+
+# Эквайринг
+ACQUIRING = 1.6  # в %
+
+ms_client, first_report_data = get_first_report_data()
+
+to_date = datetime.now().date()
+# Получаем вчерашний день (from_date)
+from_date = to_date - timedelta(days=1)
+
+# Создаем текстовое поле для ввода даты и времени
+from_input = widgets.Text(
+    description='Период с:',
+    placeholder='YYYY-MM-DD HH:MM',
+    value=f'{from_date} 18:00'
+)
+
+to_input = widgets.Text(
+    description='до:',
+    placeholder='YYYY-MM-DD HH:MM',
+    value=f'{to_date} 23:59'
+)
+
+# Отображаем виджет
+display(from_input)
+display(to_input)
+
+# Функция для получения значения после ввода и проверки формата
+def get_datetime():
+    from_input_value = from_input.value
+    to_input_value = to_input.value
+    try:
+        # Проверяем корректность формата даты и времени
+        from_date = datetime.strptime(from_input_value, '%Y-%m-%d %H:%M')
+        to_date = datetime.strptime(to_input_value, '%Y-%m-%d %H:%M')
+        from_date_f = f'{from_date}.000'
+        to_date_f = f'{to_date}.000'
+        report = get_wb_first_report(ms_client=ms_client, base_dict_=first_report_data, 
+                            from_date_=from_date_f, to_date_=to_date_f, 
+                            acquiring=ACQUIRING)
+        files.download(report)
+    except ValueError:
+        print("Пожалуйста, введите корректную дату и время в формате YYYY-MM-DD HH:MM.")
+
+# Кнопка для подтверждения ввода
+button = widgets.Button(description="Сформировать отчет", button_style='info')
+button.on_click(lambda b: get_datetime())
+display(button)
+'''
 
 
 def get_product_id_from_url(url):
@@ -68,48 +97,6 @@ def get_wb_stocks_dict(ms_client):
     products = ms_client.get_bundles()  # Получить комплекты
     wb_stocks_dict = {product['code']: get_stock_for_bundle(stocks_dict, product) for product in products}
     return wb_stocks_dict
-
-
-# class TabStyles:
-#     border_side = Side(border_style='thin', color='C5B775')
-#     border_style = Border(left=border_side, right=border_side, top=border_side, bottom=border_side)
-#     font_colibri = Font(name='Calibri')
-#     font_colibri_bolt = Font(name='Calibri', bold=True)
-#
-#     # Стиль для заголовка
-#     header_row_style = NamedStyle(name="header_row_style")
-#     header_row_style.font = font_colibri_bolt
-#     header_row_style.fill = PatternFill(start_color="F4ECC5", end_color="F4ECC5", fill_type="solid")
-#     header_row_style.border = border_style
-#
-#     # Стиль для заголовка особый
-#     header_row_spec_style = NamedStyle(name="header_row_spec_style")
-#     header_row_spec_style.font = font_colibri_bolt
-#     header_row_spec_style.fill = PatternFill(start_color="B3AC86", end_color="B3AC86", fill_type="solid")
-#     header_row_spec_style.border = border_style
-#
-#     # Стиль для строк первого уровня
-#     row_l1_style = NamedStyle(name="row_l1_style")
-#     row_l1_style.font = font_colibri
-#     row_l1_style.fill = PatternFill(start_color="FBF9EC", end_color="FBF9EC", fill_type="solid")
-#     row_l1_style.border = border_style
-#
-#     # Стиль для строк второго уровня
-#     row_l2_style = NamedStyle(name="row_l2_style")
-#     row_l2_style.font = font_colibri
-#     row_l2_style.border = border_style
-#
-#     # Стиль для граф рентабельности 15-й и 18-й колонки
-#     col_spec_style = NamedStyle(name="col_spec_style")
-#     col_spec_style.font = font_colibri
-#     col_spec_style.fill = PatternFill(start_color="FBF9EC", end_color="FBF9EC", fill_type="solid")
-#     col_spec_style.border = border_style
-#
-#     # Стиль для строк первого уровня особый
-#     cell_l1_spec_style = NamedStyle(name="cell_l1_spec_style")
-#     cell_l1_spec_style.font = font_colibri_bolt
-#     cell_l1_spec_style.fill = PatternFill(start_color="B3AC86", end_color="B3AC86", fill_type="solid")
-#     cell_l1_spec_style.border = border_style
 
 
 def get_dict_for_report(ms_client, wb_client):
@@ -345,76 +332,3 @@ def get_first_report_data():
     ms_client = MoySklad(ms_token)
     wb_client = WB(api_key=wb_token)
     return ms_client, get_dict_for_report(ms_client, wb_client)
-
-
-# def get_datetime(ms_client, first_report_data, from_input_value, to_input_value, acquiring=1.6):
-#     # from_input_value = from_input.value
-#     # to_input_value = to_input.value
-#     try:
-#         # Проверяем корректность формата даты и времени
-#         from_date = datetime.strptime(from_input_value, '%Y-%m-%d %H:%M')
-#         to_date = datetime.strptime(to_input_value, '%Y-%m-%d %H:%M')
-#         from_date_f = f'{from_date}.000'
-#         to_date_f = f'{to_date}.000'
-#         get_wb_first_report(ms_client=ms_client, base_dict_=first_report_data, from_date_=from_date_f,
-#                             to_date_=to_date_f, acquiring=acquiring)
-#     except ValueError:
-#         print("Пожалуйста, введите корректную дату и время в формате YYYY-MM-DD HH:MM.")
-#
-#
-# # Пример как должно быть оформлено во внешнем модуле
-# def get_wb_first_report_0():
-#     ms_client, first_report_data = get_first_report_data()
-#
-#     to_date = datetime.now().date()
-#     # Получаем вчерашний день (from_date)
-#     from_date = to_date - timedelta(days=1)
-#
-#     # Тест
-#     # get_datetime(ms_client, first_report_data, f'{from_date} 18:00', f'{to_date} 23:59')
-#
-#     # Начало внешний
-#     # Создаем текстовое поле для ввода даты и времени
-#     from_input = widgets.Text(
-#         description='Период с:',
-#         placeholder='YYYY-MM-DD HH:MM',
-#         value=f'{from_date} 18:00'
-#     )
-#
-#     to_input = widgets.Text(
-#         description='до:',
-#         placeholder='YYYY-MM-DD HH:MM',
-#         value=f'{to_date} 23:59'
-#     )
-#
-#     # Отображаем виджет
-#     display(from_input)
-#     display(to_input)
-#
-#     from_input_value = from_input.value
-#     to_input_value = to_input.value
-#
-#     # Функция для получения значения после ввода и проверки формата
-#     # def get_datetime():
-#     #     from_input_value = from_input.value
-#     #     to_input_value = to_input.value
-#     #     try:
-#     #         # Проверяем корректность формата даты и времени
-#     #         from_date = datetime.strptime(from_input_value, '%Y-%m-%d %H:%M')
-#     #         to_date = datetime.strptime(to_input_value, '%Y-%m-%d %H:%M')
-#     #         from_date_f = f'{from_date}.000'
-#     #         to_date_f = f'{to_date}.000'
-#     #         get_report(ms_client=ms_client, base_dict_=first_report_data,
-#     #                    from_date_=from_date_f, to_date_=to_date_f)
-#     #     except ValueError:
-#     #         print("Пожалуйста, введите корректную дату и время в формате YYYY-MM-DD HH:MM.")
-#
-#     # Кнопка для подтверждения ввода
-#     button = widgets.Button(description="Сформировать отчет", button_style='info')
-#     button.on_click(lambda b: get_datetime(ms_client, first_report_data, from_input_value, to_input_value, ACQUIRING))
-#     display(button)
-#     # Окончание внешний
-#
-#
-# if __name__ == '__main__':
-#     get_wb_first_report_0()

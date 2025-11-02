@@ -344,7 +344,7 @@ def get_cards_prices(client: MoySklad, nn_list: list):
     if not cards:
         print('Не удалось получить данные по корзине.')
         return {}
-    return {int(card['id']): get_prices_info(card['sizes']) for card in cards}
+    return {int(card['id']): {**get_prices_info(card['sizes']), 'category': card['subjectId']} for card in cards}
 
 
 def get_stocks_wh_full(client: MoySklad, nm_list: list) -> dict:
