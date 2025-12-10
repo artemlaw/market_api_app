@@ -226,8 +226,6 @@ def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: flo
                                           warehouse_name=order.get('warehouseName', 'Подольск'))
 
     nm_id = order.get('nmId', '')
-    # if nm_id == 008011159:
-    #     print('Test')
     # Получение цены
     price = float(wb_prices_dict.get(nm_id, {}).get('price', 0.0))
     if not price:

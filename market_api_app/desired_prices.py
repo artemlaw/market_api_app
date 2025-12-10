@@ -890,15 +890,41 @@ def update_stocks_in_tabs_v2(file_settings: str, table_key: str, sheet_in: str, 
     print(f"Данные успешно сохранены на лист в таблице '{wb_table}'.")
 
 
+def update_stocks_in_tabs_v3(file_settings: str, table_key: str, sheet_in: str, sheet_out: str):
+    # wb_table = get_table(file_settings, table_key)
+    ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
+    ms_client = MoySklad(api_key=ms_token)
+    wb_client = WB(api_key=wb_token)
+    wb_prices = get_price_dict(wb_client)
+    nm_ids = list(wb_prices.keys())
+
+    for nd_id in nm_ids:
+        offices_stocks = wb_client.get_stocks_for_nm_id(nm_id=nd_id, from_date='2025-12-01', to_date='2025-12-01')
+        stock_dict = {}
+        for office in offices_stocks:
+            office_name = 'FBS' if office.get('regionName', '') == 'Маркетплейс' else office.get('officeName', '')
+            # office_id = office.get('officeID', 0)
+            # stock_count = office.get('stockCount', 0)
+            #
+            # office.get('regionName', 'FBO') : office.get('stockCount', 0)
+
+            stock_dict[office_name] = office.get('metrics', {}).get('stockCount', 0)
+
+        wb_prices[nd_id]['stocks'] = stock_dict
+        print(wb_prices[nd_id])
+
+    print(wb_prices)
+
+
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    # ya = get_ym_profitability('24-09-2025', '25-09-2025', plan_margin=28.0, fbs=True)
-    # print(ya)
+    ya = get_ym_profitability('10-12-2025', '10-12-2025', plan_margin=28.0, fbs=True)
+    print(ya)
     # oz = get_oz_profitability('04-06-2025', '05-06-2025', plan_margin=28.0)
     # oz = get_oz_desired_prices(plan_margin=28.0)
     # print(oz)
 
-    # wb_orders = get_wb_profitability('2025-10-29', '2025-10-30', plan_margin=28.0, acquiring=1.6,
+    # wb_orders = get_wb_profitability('2025-11-17', '2025-11-20', plan_margin=28.0, acquiring=1.6,
     #                                  one_fbs=True, save_to_tab=True)
     # # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
     # print(wb_orders)
@@ -922,9 +948,14 @@ if __name__ == '__main__':
 
     # update_stocks_in_tabs_v2("", "", "", "")
 
-    update_prices_in_tabs("", "", "")
+    # update_prices_in_tabs("", "", "")
 
     # ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
-    # ms_client = MoySklad(api_key=ms_token)
+    # # ms_client = MoySklad(api_key=ms_token)
     # wb_client = WB(api_key=wb_token)
-    # wb_stocks = wb_client.get_stocks_report("2025-09-15", "2025-09-15")
+    # wb_stocks = wb_client.get_stocks_report_for_products("2025-11-20", "2025-11-20")
+    # # wb_stocks = wb_client.get_stocks()
+    # # a = {p.get('nmId'): p.get('quantityFull') for p in wb_stocks}
+    # print(wb_stocks)
+
+    # update_stocks_in_tabs_v3("", "", "", "")

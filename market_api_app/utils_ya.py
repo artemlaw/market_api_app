@@ -70,7 +70,7 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
     offers_data = [
         {
             "categoryId": offer.get("mapping", {}).get("marketCategoryId", 0),
-            "price": offer_data.get("basicPrice", {}).get("value", 0.0),
+            "price": offer_data.get("basicPrice", {}).get("value", 5.0),
             "length": dimensions.get("length", 0),
             "width": dimensions.get("width", 0),
             "height": dimensions.get("height", 0),
@@ -78,8 +78,7 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
             "quantity": 1,
         }
         for offer in offers
-        if (offer_data := offer.get("offer", {}))
-           and (dimensions := offer_data.get("weightDimensions", {}))
+        if (offer_data := offer.get("offer", {})) and (dimensions := offer_data.get("weightDimensions", {}))
     ]
 
     offers_dict = {
@@ -175,6 +174,30 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
 def sum_amounts(items):
     """Возвращает сумму всех amount в списке словарей."""
     return sum(item['amount'] for item in items) if items else 0
+
+
+def calculate_recommended_price_ya(prime_cost: float, agency_commission: float, delivery_cross_cost: float,
+                                   sorting: float, delivery_cost: float, plan_margin: float, commission: float,
+                                   min_price: float) -> float:
+    # Преобразуем проценты в доли
+    plan_margin /= 100  # TODO: Проверить чтобы отдавалось в начальном виде без преобразования
+    # acquiring /= 100
+    commission /= 100  # TODO: Проверить чтобы отдавалось в начальном виде без преобразования
+    # TODO: Проверить верность формулы
+    recom_price = round(
+        (prime_cost + agency_commission + delivery_cross_cost + sorting)
+        / (1 - plan_margin - commission), 0)
+    # Или в зависимости от delivery_percent и delivery_cost
+    recom_price = round(
+        (prime_cost + agency_commission + delivery_cross_cost + sorting + delivery_cost)
+        / (1 - plan_margin - commission)
+    )
+
+
+
+    if recom_price < min_price:
+        recom_price = min_price
+    return recom_price
 
 
 def get_ym_orders(ym_client: YaMarket, campaign_id: int = 0, from_date='12-12-2024', to_date='13-12-2024'):

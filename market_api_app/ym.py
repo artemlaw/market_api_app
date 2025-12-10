@@ -16,7 +16,7 @@ class YaMarket(ApiBase):
 
     def get_campaigns(self):
         logger.info(f"Получение информации о магазинах кабинета")
-        url = self.host + "campaigns?page=&pageSize="
+        url = self.host + "v2/campaigns?page=&pageSize="
         result = self.get(url)
         response_json = result.json() if result else {}
         if not result:
@@ -26,7 +26,7 @@ class YaMarket(ApiBase):
     def get_categories(self, offers: list, campaign_id: int = 0, selling_program: str = "FBS"):
         logger.info(f"Получение актуальных тарифов")
         # Максимум 200, то можно совместить с получением номенклатуры
-        url = self.host + "tariffs/calculate"
+        url = self.host + "v2/tariffs/calculate"
         data = {
             "parameters": {
                 "frequency": "BIWEEKLY",
@@ -37,12 +37,12 @@ class YaMarket(ApiBase):
         }
         result = self.post(url, data)
         if not result:
-            logger.error("Не удалось получить данные о карточках товара.")
+            logger.error("Не удалось получить данные по тарифам.")
         result_json = result.json() if result else {}
         if result_json and result_json.get("status") == "OK":
             return result_json.get("result", {}).get("offers", [])
         else:
-            logger.error("Не удалось получить данные о карточках товара.")
+            logger.error("Не удалось получить данные по тарифам.")
             return []
 
     def get_offers(self, business_id: int):
@@ -54,7 +54,7 @@ class YaMarket(ApiBase):
         while True:
             url = (
                 self.host
-                + f"businesses/{business_id}/offer-mappings?page_token={page_token}&limit=200"
+                + f"v2/businesses/{business_id}/offer-mappings?page_token={page_token}&limit=200"
             )
             result = self.post(url, data)
             result_json = result.json() if result else {}
@@ -72,7 +72,7 @@ class YaMarket(ApiBase):
 
     def get_orders(self, campaign_id: int = 0, from_date: str = '13-12-2024', to_date: str = '13-12-2024') -> list:
         logger.info(f"Получение информации о заказах")
-        url = self.host + f'campaigns/{campaign_id}/orders'
+        url = self.host + f'v2/campaigns/{campaign_id}/orders'
         params = {'fake': False, 'fromDate': from_date, 'toDate': to_date, 'limit': 1000}
         orders_list = []
         while True:
@@ -90,7 +90,7 @@ class YaMarket(ApiBase):
 
     def get_tree(self):
         logger.info(f"Получение информации о категориях")
-        url = self.host + "categories/tree"
+        url = self.host + "v2/categories/tree"
         data = {
           "language": "RU"
         }
