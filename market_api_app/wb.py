@@ -85,9 +85,8 @@ class WB(ApiBase):
             result = self.get(url, params)
             if result:
                 response_json = result.json()
-                print(response_json)
-                orders_list = response_json.get('orders', [])
-                next_cursor = response_json.get('next')
+                orders_list = response_json.get('orders', []) if response_json else []
+                next_cursor = response_json.get('next', '') if response_json else ''
                 if orders_list and next_cursor:
                     orders_fbs += orders_list
                     params['next'] = next_cursor
