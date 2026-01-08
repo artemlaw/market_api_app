@@ -15,7 +15,7 @@ logger = logging.getLogger('Ozon Utils')
 SORTING = 20.0  # Стоимость обработки, зависит от склада сдачи, ₽
 LAST_MILE_PERCENT = 5.5  # Последняя миля, %
 LAST_MILE_MAX = 500.0
-ACQUIRING_PERCENT = 1.8  # Эквайринг, %
+ACQUIRING_PERCENT = 2.0  # Эквайринг, %
 MIN_PRICE = 60.0  # Минимальная рекомендуемая цена, ₽
 
 
@@ -134,7 +134,7 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
     Расчет прибыли озон
     _________________________________________________________
     commission_cost - Комиссия % от цены, по категории товара
-    acquiring_cost - Эквайринг 1,85% от цены
+    acquiring_cost - Эквайринг 1,85% от цены //увеличено до 2, т.е. + 22% НДС
     delivery_cost - Логистика:
         * до 1 литра включительно — 80 ₽;
         * до 190 литров включительно — 18 ₽ за каждый дополнительный литр свыше объёма 1 л;

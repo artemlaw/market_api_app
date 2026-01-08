@@ -19,7 +19,7 @@ from google.colab import files
 from market_api_app import get_first_report_data, get_wb_first_report
 
 # Эквайринг
-ACQUIRING = 1.6  # в %
+ACQUIRING = 2.0  # в %
 
 ms_client, first_report_data = get_first_report_data()
 
@@ -113,7 +113,7 @@ def get_dict_for_report(ms_client, wb_client):
     }
 
 
-def get_order_data(order: dict, base_dict: dict, acquiring: float = 1.6):
+def get_order_data(order: dict, base_dict: dict, acquiring: float = 2.0):
     stocks_dict = base_dict['wb_stocks_dict']
     logistic_dict = base_dict['logistic_dict']
     wb_prices_dict = base_dict['wb_prices_dict']
@@ -199,7 +199,7 @@ def get_order_data(order: dict, base_dict: dict, acquiring: float = 1.6):
     return data
 
 
-def get_wb_first_report(ms_client, base_dict_, from_date_, to_date_, acquiring: float = 1.6):
+def get_wb_first_report(ms_client, base_dict_, from_date_, to_date_, acquiring: float = 2.0):
     print(f'Формирую отчет по заказам от {from_date_} до {to_date_}')
     filter_str = f'?filter=moment>{from_date_};moment<{to_date_};&order=name,desc&expand=positions.assortment,state'
     orders = ms_client.get_orders(filter_str=filter_str)

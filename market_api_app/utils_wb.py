@@ -3,6 +3,7 @@ from market_api_app import WB
 from market_api_app.utils import get_date_for_request
 
 FBS_COMMISSION = 0.0  # Принудительное повышение комиссии FBS на 0.0% над FBO, так как нет по API
+ACQUIRING_PERCENT = 2.0  # Эквайринг, % по умолчанию
 
 
 def find_warehouse_by_name(warehouses: list, name: str) -> dict | None:
@@ -129,7 +130,7 @@ def get_logistics_new(ktr: float, logistics_coefficient: float, logistics_first_
 
 # TODO: WB - Проверять на актуальность расчет рекомендуемой цены
 def calculate_recommended_price(prime_cost: float, logistics: float, plan_margin: float,
-                                commission: float, acquiring: float = 1.6, min_price: float = 60.0) -> float:
+                                commission: float, acquiring: float = ACQUIRING_PERCENT, min_price: float = 60.0) -> float:
     # Преобразуем проценты в доли
     plan_margin /= 100
     acquiring /= 100
@@ -141,7 +142,7 @@ def calculate_recommended_price(prime_cost: float, logistics: float, plan_margin
 
 
 def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, category_dict: dict, logistic_dict: dict,
-                            plan_margin, acquiring: float = 1.5, fbs: bool = True, card_stocks: bool = False) -> dict:
+                            plan_margin, acquiring: float = ACQUIRING_PERCENT, fbs: bool = True, card_stocks: bool = False) -> dict:
     price = float(prices_dict.get('price', 0))
     discount = float(prices_dict.get('discount', 0))
     prime_cost = product.get('PRIME_COST', 0.0)
@@ -215,7 +216,7 @@ def get_wb_data_for_article(nm_id: int, product: dict, prices_dict: dict, catego
     return data
 
 
-def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: float, acquiring: float = 1.5,
+def get_order_data(order: dict, product: dict, base_dict: dict, plan_margin: float, acquiring: float = ACQUIRING_PERCENT,
                    fbs: bool = True) -> dict:
     wb_prices_dict = base_dict['wb_prices_dict']
     if fbs:

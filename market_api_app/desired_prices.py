@@ -451,7 +451,7 @@ def get_null_nm_id(order_nm_id):
     }
 
 
-def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0, acquiring: float = 1.6,
+def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0, acquiring: float = 2.0,
                          one_fbs: bool = False, save_to_gs: bool = False, save_to_tab: bool = False,
                          file_settings: str = None, table_key: str = None, sheet_out: str = None):
     ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
@@ -604,7 +604,7 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     return path_xls_file
 
 
-def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 1.6, fbs: bool = True):
+def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 2.0, fbs: bool = True):
     ms_token, wb_token = get_api_keys(["MS_API_TOKEN", "WB_API_TOKEN"])
 
     wb_client = WB(api_key=wb_token)
@@ -924,7 +924,7 @@ if __name__ == '__main__':
     # oz = get_oz_desired_prices(plan_margin=28.0)
     # print(oz)
 
-    wb_orders = get_wb_profitability('2025-12-23', '2025-12-23', plan_margin=28.0, acquiring=1.6,
+    wb_orders = get_wb_profitability('2025-12-23', '2025-12-23', plan_margin=28.0, acquiring=2.0,
                                      one_fbs=True, save_to_tab=True)
     # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
     print(wb_orders)
