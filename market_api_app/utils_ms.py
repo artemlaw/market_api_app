@@ -366,7 +366,7 @@ def get_ms_products_for_wb(client: MoySklad, fbo_stock: bool = False, limiter_li
     print('Мой склад: Получение товаров')
     # Отбираем по лимитеру если есть
     if limiter_list:
-        products_for_project = [product for product in ms_products if int(product['code']) in limiter_list]
+        products_for_project = [product for product in ms_products if product.get('pathName', '') == 'WB' and int(product['code']) in limiter_list]
     # Отбираем только по проекту
     else:
         products_for_project = [product for product in ms_products if product.get('pathName', '') == 'WB']
