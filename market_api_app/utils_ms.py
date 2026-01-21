@@ -80,7 +80,7 @@ def get_volume(attributes_dict: dict) -> float:
             / 1000.0) if attributes_dict else 0.0
 
 
-def get_ms_products(client: MoySklad, project: str = 'ЯндексМаркет') -> dict:
+def get_ms_products(client: MoySklad, project: str = 'ЯндексМаркет', price_cost_name: str = "Цена продажи") -> dict:
     """
     Получение товаров по project - значения 'ЯндексМаркет', 'Озон', 'WB'
     """
@@ -100,7 +100,7 @@ def get_ms_products(client: MoySklad, project: str = 'ЯндексМаркет')
         price_name = "Цена основная"
     else:
         product_key = 'article'
-        price_name = "Цена продажи"
+        price_name = price_cost_name
 
     return {
         product[product_key]: {

@@ -226,11 +226,11 @@ def get_ym_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     return path_xls_file
 
 
-def get_oz_desired_prices(plan_margin: float = 28.0):
+def get_oz_desired_prices(plan_margin: float = 28.0, price_cost_name: str = "Цена продажи"):
     ms_token, oz_client_id, oz_token = get_api_keys(["MS_API_TOKEN", "OZ_CLIENT_ID", "OZ_API_TOKEN"])
 
     ms_client = MoySklad(ms_token)
-    ms_products = get_ms_products(ms_client, project='Озон')
+    ms_products = get_ms_products(ms_client, project='Озон', price_cost_name=price_cost_name)
 
     oz_client = Ozon(client_id=oz_client_id, api_key=oz_token)
     products = oz_client.get_products()
@@ -330,11 +330,11 @@ def get_oz_desired_prices(plan_margin: float = 28.0):
     return path_xls_file
 
 
-def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0):
+def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0, price_cost_name: str = "Цена продажи"):
     ms_token, oz_client_id, oz_token = get_api_keys(["MS_API_TOKEN", "OZ_CLIENT_ID", "OZ_API_TOKEN"])
 
     ms_client = MoySklad(ms_token)
-    ms_products = get_ms_products(ms_client, project='Озон')
+    ms_products = get_ms_products(ms_client, project='Озон', price_cost_name=price_cost_name)
 
     oz_client = Ozon(client_id=oz_client_id, api_key=oz_token)
     products = oz_client.get_products()
@@ -918,16 +918,16 @@ def update_stocks_in_tabs_v3(file_settings: str, table_key: str, sheet_in: str, 
 
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True)
-    # ya = get_ym_profitability('10-12-2025', '10-12-2025', plan_margin=28.0, fbs=True)
-    # print(ya)
-    # oz = get_oz_profitability('04-06-2025', '05-06-2025', plan_margin=28.0)
-    # oz = get_oz_desired_prices(plan_margin=28.0)
+    ya = get_ym_profitability('20-01-2026', '21-01-2026', plan_margin=28.0, fbs=True)
+    print(ya)
+    # oz = get_oz_profitability('20-01-2026', '21-01-2026', plan_margin=28.0)
+    # # oz = get_oz_desired_prices(plan_margin=28.0)
     # print(oz)
 
-    wb_orders = get_wb_profitability('2026-01-12', '2026-01-13', plan_margin=28.0, acquiring=2.0,
-                                     one_fbs=True, save_to_tab=True)
-    # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
-    print(wb_orders)
+    # wb_orders = get_wb_profitability('2026-01-12', '2026-01-13', plan_margin=28.0, acquiring=2.0,
+    #                                  one_fbs=True, save_to_tab=True)
+    # # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
+    # print(wb_orders)
 
     # client = MoySklad(api_key='')
     # stocks_data = get_stocks_wh(client, [251840861,])
