@@ -238,8 +238,8 @@ def get_stocks_by_full_stocks(full_stocks: dict, wh: dict) -> tuple:
     stock_list = []
 
     for wh_id, stock, in full_stocks.items():
-        # Подольск 3 - 302088
-        if wh_id == 119261 or wh_id == 302088:
+        # Подольск 3 - 302088, Подольск 4 - 302066
+        if wh_id in [119261, 302066, 302088]:
             fbs_stock += stock
             stock_list.append({'FBS': stock})
         else:
