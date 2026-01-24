@@ -6,12 +6,12 @@ logger = logging.getLogger('YaMarket')
 
 
 class YaMarket(ApiBase):
-    def __init__(self, api_key: str, max_retries: int = 3, delay_seconds: int = 15):
+    def __init__(self, api_key: str, max_retries: int = 3, delay_seconds: int = 15, auth_type: str = 'oauth2'):
         super().__init__(max_retries=max_retries, delay_seconds=delay_seconds)
-        self.headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
+        if auth_type == 'oauth2':
+            self.headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        else:
+            self.headers = {"Api-Key": api_key, "Content-Type": "application/json"}
         self.host = "https://api.partner.market.yandex.ru/"
 
     def get_campaigns(self):
