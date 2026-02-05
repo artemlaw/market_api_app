@@ -15,13 +15,15 @@ logger = logging.getLogger('Ozon Utils')
 SORTING = 20.0  # Стоимость обработки, зависит от склада сдачи, ₽
 LAST_MILE_PERCENT = 5.5  # Последняя миля, %
 LAST_MILE_MAX = 500.0
-ACQUIRING_PERCENT = 2.0  # Эквайринг, %
+ACQUIRING_PERCENT = 1.0  # Эквайринг, %
+ACQUIRING_NDS = 1.22  # Эквайринг НДС22, %
+ACQUIRING_PERCENT_NDS = ACQUIRING_PERCENT * ACQUIRING_NDS
 MIN_PRICE = 60.0  # Минимальная рекомендуемая цена, ₽
 
 
 def print_oz_constants():
     print('Предопределены значения:')
-    print(f'* Эквайринг - {ACQUIRING_PERCENT}%')
+    print(f'* Эквайринг + НДС - {ACQUIRING_PERCENT_NDS}%')
     print(f'* Обработка - {SORTING}₽')
     print(f'* Минимальная рекомендуемая цена - {MIN_PRICE}₽')
 
@@ -134,11 +136,13 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
     Расчет прибыли озон
     _________________________________________________________
     commission_cost - Комиссия % от цены, по категории товара
-    acquiring_cost - Эквайринг 1,85% от цены //увеличено до 2, т.е. + 22% НДС
+    acquiring_cost - Эквайринг 1% от цены + 22% НДС от суммы эквайринга
     delivery_cost - Логистика:
-        * до 1 литра включительно — 80 ₽;
-        * до 190 литров включительно — 18 ₽ за каждый дополнительный литр свыше объёма 1 л;
-        * свыше 190 литров — 3478 ₽
+        * от 1,001 до 2 литров включительно — 99,64 ₽;
+        * от 2,001 до 3 литров включительно — 117,94 ₽;
+        * до 190 литров включительно — 23,39 ₽ за каждый дополнительный литр свыше 3 л;
+        * от 190,001 до 1000 литров включительно — 6,1 ₽ за каждый дополнительный литр свыше 190 литров;
+        * свыше 1000 литров — фиксированная стоимость 9432,87 ₽
     delivery_cross_cost - Доставка до места выдачи в РФ до 25р (было Последняя миля - 5,5% от цены, но не больше 500 р)
     sorting - Обработка = 20₽
     """
@@ -151,8 +155,8 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
     commission_percent = round(sales_percent_fbs / 100, 3)
     commission_cost = round(price * commission_percent, 1)
 
-    payment_percent = round(ACQUIRING_PERCENT / 100, 3)
-    # Можно сделать как в рекомендуемых ценах из article_data.get("acquiring", 0.0), а не предопределенное
+    payment_percent = round(ACQUIRING_PERCENT_NDS / 100, 3)
+    # Можно сделать как в рекомендуемых ценах из article_data.get("acquiring", 0.0) * ACQUIRING_NDS, а не предопределенное
     acquiring_cost = round(price * payment_percent, 1)
 
     # Логистика
@@ -163,7 +167,7 @@ def get_oz_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
     sorting = SORTING
     # Рекомендуемая цена
     recommended_price = calculate_recommended_price_oz(prime_cost, delivery_cost, sorting, delivery_cross_cost,
-                                                       plan_margin, sales_percent_fbs, ACQUIRING_PERCENT, MIN_PRICE)
+                                                       plan_margin, sales_percent_fbs, ACQUIRING_PERCENT_NDS, MIN_PRICE)
     reward = round(
         commission_cost
         + acquiring_cost
@@ -205,8 +209,8 @@ def get_oz_data_for_article(article: str, tariffs_dict: dict, plan_margin: float
     commission_cost = round(price * commission_percent, 1)
 
     # payment_percent = round(ACQUIRING_PERCENT / 100, 3)
-    # acquiring_cost = round(price * payment_percent, 1)
-    acquiring_cost = round(article_data.get("acquiring", 0.0), 1)
+    # acquiring_cost = round(price * payment_percent * ACQUIRING_NDS, 1)
+    acquiring_cost = round(article_data.get("acquiring", 0.0) * ACQUIRING_NDS, 1)
 
     # Логистика
     delivery_cost = float(article_data.get("fbs_direct_flow_trans_max_amount", 0))
@@ -216,7 +220,7 @@ def get_oz_data_for_article(article: str, tariffs_dict: dict, plan_margin: float
     sorting = SORTING
     # Рекомендуемая цена
     recommended_price = calculate_recommended_price_oz(prime_cost, delivery_cost, sorting, delivery_cross_cost,
-                                                       plan_margin, sales_percent_fbs, ACQUIRING_PERCENT, MIN_PRICE)
+                                                       plan_margin, sales_percent_fbs, ACQUIRING_PERCENT_NDS, MIN_PRICE)
     reward = round(
         commission_cost
         + acquiring_cost

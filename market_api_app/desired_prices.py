@@ -917,12 +917,13 @@ def update_stocks_in_tabs_v3(file_settings: str, table_key: str, sheet_in: str, 
 
 
 if __name__ == '__main__':
-    get_ym_desired_prices(plan_margin=28.0, fbs=True, auth_type='apiKey')
+    # get_ym_desired_prices(plan_margin=28.0, fbs=True, auth_type='apiKey')
+    # get_ym_desired_prices(plan_margin=28.0, fbs=True, auth_type='oauth2')
     # ya = get_ym_profitability('20-01-2026', '21-01-2026', plan_margin=28.0, fbs=True)
     # print(ya)
     # oz = get_oz_profitability('20-01-2026', '21-01-2026', plan_margin=28.0, price_cost_name='Цена основная')
-    # # oz = get_oz_desired_prices(plan_margin=28.0)
-    # print(oz)
+    oz = get_oz_desired_prices(plan_margin=28.0)
+    print(oz)
 
     # wb_orders = get_wb_profitability('2026-01-21', '2026-01-22', plan_margin=28.0, acquiring=2.0,
     #                                  one_fbs=True, save_to_tab=True)
