@@ -103,3 +103,32 @@ class YaMarket(ApiBase):
         else:
             logger.error("Не удалось получить данные о категориях товара.")
             return []
+
+    def get_offer_prices(self, campaign_id: int, offers: list = None) -> list:
+        logger.info(f"Получение актуальных цен")
+        # Максимум 2000, то можно совместить с получением номенклатуры
+        page_token = ""
+        data = {}
+
+        if offers:
+            # Если потребуется использование работы по выборке, необходимо ограничить в 2000 позиций.
+            data['offerIds'] = offers
+        offers_list = []
+        while True:
+            url = (
+                    self.host
+                    + f"v2/campaigns/{campaign_id}/offer-prices?page_token={page_token}&limit=2000"
+            )
+            result = self.post(url, data)
+            result_json = result.json() if result else {}
+            if result_json and result_json.get("status") == "OK":
+                offers_list += result_json.get("result", {}).get("offers", [])
+                if not result_json.get("result", {}).get("paging", {}):
+                    break
+                page_token = (
+                    result_json.get("result", {}).get("paging", {}).get("nextPageToken", "")
+                )
+            else:
+                logger.error("Не удалось получить данные о ценах.")
+                break
+        return offers_list

@@ -8,7 +8,7 @@ from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order, prin
 from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article, \
     wb_get_orders, get_order_data, get_category_subject_id_dict
 from market_api_app.utils_ya import get_category_ids, chunked_offers_list, get_dict_for_commission, \
-    get_ya_data_for_article, get_ym_orders, get_ya_data_for_order
+    get_ya_data_for_article, get_ym_orders, get_ya_data_for_order, get_prices_dict
 
 '''
 Использовать в Colab в виде:
@@ -44,7 +44,8 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True, auth_type
     ym_client = YaMarket(api_key=ym_token, auth_type=auth_type)
     offers = ym_client.get_offers(business_id)
 
-    category_ids = get_category_ids(ym_client)
+    category_ids = get_category_ids(ym_client=ym_client)
+    prices_dict = get_prices_dict(ym_client=ym_client, campaign_id=campaign_id)
 
     print("ЯндексМаркет: Получение актуальных тарифов")
     offers_commission_dict = chunked_offers_list(
@@ -54,6 +55,7 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True, auth_type
         data=offers,
         category_ids=category_ids,
         chunk_size=200,
+        prices_dict=prices_dict
     )
 
     ya_set = set(offers_commission_dict)
@@ -137,6 +139,7 @@ def get_ym_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     offers = ym_client.get_offers(business_id)
 
     category_ids = get_category_ids(ym_client=ym_client)
+    prices_dict = get_prices_dict(ym_client=ym_client, campaign_id=campaign_id)
 
     print("ЯндексМаркет: Получение актуальных тарифов")
     offers_commission_dict = chunked_offers_list(
@@ -146,6 +149,7 @@ def get_ym_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
         data=offers,
         category_ids=category_ids,
         chunk_size=200,
+        prices_dict=prices_dict
     )
 
     ya_set = set(offers_commission_dict)
@@ -918,12 +922,19 @@ def update_stocks_in_tabs_v3(file_settings: str, table_key: str, sheet_in: str, 
 
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True, auth_type='apiKey')
-    # get_ym_desired_prices(plan_margin=28.0, fbs=True, auth_type='oauth2')
+    get_ym_desired_prices(plan_margin=28.0, fbs=True, auth_type='oauth2')
     # ya = get_ym_profitability('20-01-2026', '21-01-2026', plan_margin=28.0, fbs=True)
     # print(ya)
+    # ms_token, ym_token, business_id, campaign_id = get_api_keys(["MS_API_TOKEN", "YM_API_TOKEN", "YA_BUSINESS_ID",
+    #                                                              "YA_FBS_CAMPAIGN_ID"])
+    #
+    # ym_client = YaMarket(api_key=ym_token, auth_type='oauth2')
+    # ya = get_prices_dict(ym_client, campaign_id)
+    # print(ya)
+
     # oz = get_oz_profitability('20-01-2026', '21-01-2026', plan_margin=28.0, price_cost_name='Цена основная')
-    oz = get_oz_desired_prices(plan_margin=28.0)
-    print(oz)
+    # oz = get_oz_desired_prices(plan_margin=28.0)
+    # print(oz)
 
     # wb_orders = get_wb_profitability('2026-01-21', '2026-01-22', plan_margin=28.0, acquiring=2.0,
     #                                  one_fbs=True, save_to_tab=True)

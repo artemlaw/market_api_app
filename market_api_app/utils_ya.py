@@ -37,15 +37,15 @@ def get_ya_campaign_and_business_ids(ym_client: YaMarket, fbs: bool = True):
         return campaign_id, business_id
 
 
-def chunked_offers_list(func, ym_client, campaign_id, data: list, category_ids: list, chunk_size: int = 200):
+def chunked_offers_list(func, ym_client, campaign_id, data: list, category_ids: list, prices_dict: dict, chunk_size: int = 200):
     result = {}
     for i in range(0, len(data), chunk_size):
         chunk_data = data[i: i + chunk_size]
-        result = {**result, **func(ym_client, campaign_id, chunk_data, category_ids)}
+        result = {**result, **func(ym_client, campaign_id, chunk_data, category_ids, prices_dict)}
     return result
 
 
-def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list, category_ids: list) -> dict:
+def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list, category_ids: list, prices_dict: dict) -> dict:
     if len(offers) > 200:
         logger.error("Ограничение запроса комиссии! Не более 200 товаров")
         offers = offers[:200]
@@ -70,7 +70,7 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
     offers_data = [
         {
             "categoryId": offer.get("mapping", {}).get("marketCategoryId", 0),
-            "price": offer_data.get("basicPrice", {}).get("value", 5.0),
+            "price": prices_dict.get(offer.get("offer", {}).get("offerId", ""), offer_data.get("basicPrice", {}).get("value", 5.0)),
             "length": dimensions.get("length", 0),
             "width": dimensions.get("width", 0),
             "height": dimensions.get("height", 0),
@@ -84,7 +84,7 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
     offers_dict = {
         index: (
             offer_.get("offer", {}).get("offerId", ""),
-            offer_.get("offer", {}).get("basicPrice", {}).get("value", 0.0),
+            prices_dict.get(offer_.get("offer", {}).get("offerId", ""), offer_.get("offer", {}).get("basicPrice", {}).get("value", 0.0)),
         )
         for index, offer_ in enumerate(offers)
     }
@@ -436,3 +436,7 @@ def get_ya_data_for_order(order: dict, tariffs_dict: dict, plan_margin: float = 
         "profit": profit,
         "profitability": profitability,
     }
+
+def get_prices_dict(ym_client: YaMarket, campaign_id: int, offers: list = None) -> dict:
+    prices_list = ym_client.get_offer_prices(campaign_id=campaign_id, offers=offers)
+    return {price.get('offerId', ''): price.get('price', {}).get('value', 0) for price in prices_list if price.get('offerId')}
