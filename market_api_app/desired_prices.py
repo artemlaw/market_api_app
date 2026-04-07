@@ -4,7 +4,8 @@ from market_api_app.utils import add_regions_sum_immutable
 from market_api_app.utils_gs import get_table, get_column_values_by_index
 from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb, \
     get_stocks_wh, get_cards_prices, get_stocks_wh_full
-from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order, print_oz_constants, get_oz_data_for_article
+from market_api_app.utils_ozon import get_oz_orders, get_oz_data_for_order, print_oz_constants, \
+                                       get_oz_data_for_article, get_logistic_msk_ekb
 from market_api_app.utils_wb import get_logistic_dict, get_price_dict, get_category_dict, get_wb_data_for_article, \
     wb_get_orders, get_order_data, get_category_subject_id_dict
 from market_api_app.utils_ya import get_category_ids, chunked_offers_list, get_dict_for_commission, \
@@ -245,7 +246,9 @@ def get_oz_desired_prices(plan_margin: float = 28.0, price_cost_name: str = "Ц�
         prod['offer_id']: {
             'acquiring': prod.get('acquiring', 0),
             'fbs_deliv_to_customer_amount': prod.get('commissions', {}).get('fbs_deliv_to_customer_amount', 0.0),
-            'fbs_direct_flow_trans_max_amount': prod.get('commissions', {}).get('fbs_direct_flow_trans_max_amount', 0),
+            # 'fbs_direct_flow_trans_max_amount': prod.get('commissions', {}).get('fbs_direct_flow_trans_max_amount', 0),
+            # Применение логистики кластера МСК -ЕКБ
+            'fbs_direct_flow_trans_max_amount': get_logistic_msk_ekb(float(prod.get('price', {}).get('price', '0.0000')), prod.get('volume_weight', 0.0)),
             'fbs_direct_flow_trans_min_amount': prod.get('commissions', {}).get('fbs_direct_flow_trans_min_amount', 0),
             'fbs_first_mile_max_amount': prod.get('commissions', {}).get('fbs_first_mile_max_amount', 0),
             'fbs_first_mile_min_amount': prod.get('commissions', {}).get('fbs_first_mile_min_amount', 0),
@@ -922,7 +925,7 @@ def update_stocks_in_tabs_v3(file_settings: str, table_key: str, sheet_in: str, 
 
 if __name__ == '__main__':
     # get_ym_desired_prices(plan_margin=28.0, fbs=True, auth_type='apiKey')
-    get_ym_desired_prices(plan_margin=28.0, fbs=True, auth_type='oauth2')
+    # get_ym_desired_prices(plan_margin=28.0, fbs=True, auth_type='oauth2')
     # ya = get_ym_profitability('20-01-2026', '21-01-2026', plan_margin=28.0, fbs=True)
     # print(ya)
     # ms_token, ym_token, business_id, campaign_id = get_api_keys(["MS_API_TOKEN", "YM_API_TOKEN", "YA_BUSINESS_ID",
@@ -933,10 +936,10 @@ if __name__ == '__main__':
     # print(ya)
 
     # oz = get_oz_profitability('20-01-2026', '21-01-2026', plan_margin=28.0, price_cost_name='Цена основная')
-    # oz = get_oz_desired_prices(plan_margin=28.0)
-    # print(oz)
+    oz = get_oz_desired_prices(plan_margin=28.0)
+    print(oz)
 
-    # wb_orders = get_wb_profitability('2026-01-21', '2026-01-22', plan_margin=28.0, acquiring=2.0,
+    # wb_orders = get_wb_profitability('2026-03-16', '2026-03-16', plan_margin=28.0, acquiring=2.0,
     #                                  one_fbs=True, save_to_tab=True)
     # # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
     # print(wb_orders)
