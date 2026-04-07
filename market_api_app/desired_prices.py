@@ -261,7 +261,7 @@ def get_oz_desired_prices(plan_margin: float = 28.0, price_cost_name: str = "Ц�
             'marketing_seller_price': float(prod.get('price', {}).get('marketing_seller_price', '0.0000')),
             'volume_weight': prod.get('volume_weight', 0.0)
         }
-        for prod in products
+        for prod in products if prod['offer_id'] =='KTA00n3608709'
     }
 
     oz_set = set(offers_commission_dict)
@@ -352,7 +352,10 @@ def get_oz_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
         prod['offer_id']: {
             'acquiring': prod.get('acquiring', 0),
             'fbs_deliv_to_customer_amount': prod.get('commissions', {}).get('fbs_deliv_to_customer_amount', 0.0),
-            'fbs_direct_flow_trans_max_amount': prod.get('commissions', {}).get('fbs_direct_flow_trans_max_amount', 0),
+            # 'fbs_direct_flow_trans_max_amount': prod.get('commissions', {}).get('fbs_direct_flow_trans_max_amount', 0),
+            # Применение логистики кластера МСК -ЕКБ
+            'fbs_direct_flow_trans_max_amount': get_logistic_msk_ekb(
+                float(prod.get('price', {}).get('price', '0.0000')), prod.get('volume_weight', 0.0)),
             'fbs_direct_flow_trans_min_amount': prod.get('commissions', {}).get('fbs_direct_flow_trans_min_amount', 0),
             'fbs_first_mile_max_amount': prod.get('commissions', {}).get('fbs_first_mile_max_amount', 0),
             'fbs_first_mile_min_amount': prod.get('commissions', {}).get('fbs_first_mile_min_amount', 0),
