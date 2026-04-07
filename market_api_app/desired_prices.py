@@ -261,7 +261,7 @@ def get_oz_desired_prices(plan_margin: float = 28.0, price_cost_name: str = "Ð¦Ð
             'marketing_seller_price': float(prod.get('price', {}).get('marketing_seller_price', '0.0000')),
             'volume_weight': prod.get('volume_weight', 0.0)
         }
-        for prod in products if prod['offer_id'] =='KTA00n3608709'
+        for prod in products
     }
 
     oz_set = set(offers_commission_dict)
