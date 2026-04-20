@@ -1,6 +1,6 @@
 import pandas as pd
 from market_api_app import MoySklad, YaMarket, Ozon, WB, ExcelStyle, get_api_keys
-from market_api_app.utils import add_regions_sum_immutable
+from market_api_app.utils import add_regions_sum_immutable, JSONStorage
 from market_api_app.utils_gs import get_table, get_column_values_by_index
 from market_api_app.utils_ms import get_stock_for_bundle, get_prime_cost, get_ms_products, get_ms_products_for_wb, \
     get_stocks_wh, get_cards_prices, get_stocks_wh_full
@@ -472,7 +472,14 @@ def get_wb_profitability(from_date: str, to_date: str, plan_margin: float = 28.0
     ms_client = MoySklad(ms_token)
     ms_products_with_stocks = get_ms_products_for_wb(ms_client, one_fbs, nm_ids_list)
 
-    tariffs_data = wb_client.get_tariffs_for_box()
+    db = JSONStorage(filename='tariffs_data.json', max_age_hours=12)
+    tariffs_data = db.read_data()
+
+    if tariffs_data is None:
+        tariffs_data = wb_client.get_tariffs_for_box()
+        db.write_data(tariffs_data)
+
+    # tariffs_data = wb_client.get_tariffs_for_box()
     category_dict = get_category_dict(wb_client)
     wb_prices_dict = get_price_dict(wb_client)
 
@@ -619,7 +626,14 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 2.0, fbs
 
     wb_client = WB(api_key=wb_token)
 
-    tariffs_data = wb_client.get_tariffs_for_box()
+    # tariffs_data = wb_client.get_tariffs_for_box()
+    db = JSONStorage(filename='tariffs_data.json', max_age_hours=12)
+    tariffs_data = db.read_data()
+
+    if tariffs_data is None:
+        tariffs_data = wb_client.get_tariffs_for_box()
+        db.write_data(tariffs_data)
+
     warehouse_name = 'Маркетплейс: Центральный федеральный округ' if fbs else 'Подольск'
     logistic_dict = get_logistic_dict(tariffs_data, warehouse_name, fbs)
     category_dict = get_category_dict(wb_client)
@@ -939,13 +953,13 @@ if __name__ == '__main__':
     # print(ya)
 
     # oz = get_oz_profitability('20-01-2026', '21-01-2026', plan_margin=28.0, price_cost_name='Цена основная')
-    oz = get_oz_desired_prices(plan_margin=28.0)
-    print(oz)
+    # oz = get_oz_desired_prices(plan_margin=28.0)
+    # print(oz)
 
-    # wb_orders = get_wb_profitability('2026-03-16', '2026-03-16', plan_margin=28.0, acquiring=2.0,
-    #                                  one_fbs=True, save_to_tab=True)
-    # # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
-    # print(wb_orders)
+    wb_orders = get_wb_profitability('2026-04-20', '2026-04-20', plan_margin=28.0, acquiring=2.0,
+                                     one_fbs=True, save_to_tab=True)
+    # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
+    print(wb_orders)
 
     # client = MoySklad(api_key='')
     # stocks_data = get_stocks_wh(client, [251840861,])

@@ -1,7 +1,9 @@
 import os
 import json
+import time
 from datetime import datetime, timedelta
 from types import ModuleType
+from typing import Union, Dict, List, Any, Optional
 from market_api_app.version import __version__
 
 
@@ -121,8 +123,171 @@ def add_regions_sum_immutable(data_dict: dict, target_regions: list) -> dict:
     return result
 
 
+class JSONStorage:
+    """
+    Класс для работы с JSON-файлом с поддержкой временных меток
+    """
+
+    def __init__(self, filename: str = 'temp_storage.json', max_age_hours: int = 24):
+        """
+        Args:
+            filename: имя JSON-файла для хранения данных
+            max_age_hours: максимальный возраст данных в часах
+        """
+        self.filename = filename
+        self.max_age_hours = max_age_hours
+
+    def write_data(self, db: Union[Dict, List]) -> bool:
+        """
+        Записывает данные в JSON-файл с временной меткой
+
+        Args:
+            db: словарь или список для сохранения
+
+        Returns:
+            bool: True если запись успешна, иначе False
+        """
+        try:
+            storage_data = {
+                "data": db,
+                "timestamp": datetime.now().isoformat(),
+                "timestamp_unix": time.time(),
+            }
+
+            with open(self.filename, 'w', encoding='utf-8') as f:
+                json.dump(storage_data, f, separators=(',', ':'), ensure_ascii=False)
+            print(f"✅ Данные записаны в {self.filename}")
+            return True
+
+        except Exception as e:
+            print(f"❌ Ошибка при записи данных: {e}")
+            return False
+
+    def is_data_fresh(self) -> bool:
+        """
+        Проверяет, не устарели ли данные (время фиксации меньше max_age_hours)
+
+        Returns:
+            bool: True если данные свежие, False если устарели или файла нет
+        """
+        try:
+            # Проверяем существование файла и возраст данных
+            with open(self.filename, 'r', encoding='utf-8') as f:
+                storage_data = json.load(f)
+                timestamp_unix = storage_data.get("timestamp_unix")
+                if timestamp_unix and (time.time() - timestamp_unix) < self.max_age_hours * 3600:
+                    return True
+                else:
+                    return False
+
+        except FileNotFoundError:
+            print(f"⚠️ Файл {self.filename} не существует")
+            return False
+        except Exception as e:
+            print(f"❌ Ошибка при проверке свежести данных: {e}")
+            return False
+
+    def clear_file(self) -> bool:
+        """
+        Очищает файл (удаляет содержимое)
+
+        Returns:
+            bool: True если очистка успешна, иначе False
+        """
+        try:
+            # Записываем пустые данные
+            with open(self.filename, 'w', encoding='utf-8') as f:
+                json.dump({}, f, ensure_ascii=False, indent=4)
+
+            print(f"🧹 Файл {self.filename} успешно очищен")
+            return True
+
+        except Exception as e:
+            print(f"❌ Ошибка при очистке файла: {e}")
+            return False
+
+    def read_data(self) -> Optional[Union[Dict, List, Any]]:
+        """
+        Получить данные из файла
+
+        Returns:
+            Данные из файла (dictionary, list or None if error)
+        """
+        try:
+            with open(self.filename, 'r', encoding='utf-8') as f:
+                storage_data = json.load(f)
+                timestamp_unix = storage_data.get("timestamp_unix")
+                if timestamp_unix and (time.time() - timestamp_unix) < self.max_age_hours * 3600:
+                    return storage_data.get("data")
+                else:
+                    return None
+        except (FileNotFoundError, json.JSONDecodeError):
+            return None
+        except Exception as e:
+            print(f"❌ Ошибка при чтении файла: {e}")
+            return None
+
+
 if __name__ == '__main__':
     # dates = get_date_for_request('2024-08-30', '2024-09-01')
     # print(dates)
     a = in_colab()
     print(a)
+
+    # Создаем экземпляр класса (данные старше 2 часов считаются устаревшими)
+    storage = JSONStorage(filename="my_storage.json", max_age_hours=1)
+
+    print("=" * 50)
+    print("ПРИМЕР 1: Запись словаря")
+    print("=" * 50)
+
+    # Записываем словарь
+    my_dict = {
+        "name": "Мой проект",
+        "version": 1.0,
+        "status": "active",
+        "settings": {
+            "theme": "dark",
+            "notifications": True
+        }
+    }
+    storage.write_data(my_dict)
+
+    print("\n" + "=" * 50)
+    print("ПРИМЕР 2: Чтение данных")
+    print("=" * 50)
+
+    # Читаем данные
+    data = storage.read_data()
+    print(f"Прочитанные данные: {data}")
+
+    print("\n" + "=" * 50)
+    print("ПРИМЕР 3: Проверка свежести данных")
+    print("=" * 50)
+
+    # Проверяем свежесть
+    is_fresh = storage.is_data_fresh()
+    print(f"Данные свежие: {is_fresh}")
+
+    print("\n" + "=" * 50)
+    print("ПРИМЕР 4: Запись списка")
+    print("=" * 50)
+
+    # Записываем список
+    my_list = [1, 2, 3, 4, 5, "текст", {"ключ": "значение"}]
+    storage.write_data(my_list)
+
+    # Читаем список
+    list_data = storage.read_data()
+    print(f"Прочитанный список: {list_data}")
+
+    print("\n" + "=" * 50)
+    print("ПРИМЕР 5: Очистка файла")
+    print("=" * 50)
+
+    # Очищаем файл
+    storage.clear_file()
+
+    # Пытаемся прочитать после очистки
+    empty_data = storage.read_data()
+    print(f"Данные после очистки: {empty_data}")

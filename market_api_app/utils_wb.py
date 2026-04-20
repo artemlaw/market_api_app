@@ -311,7 +311,7 @@ def wb_get_orders(wb_client: WB, start_of_day: str, end_of_day: str):
         if i < total_dates - 1:
             time.sleep(20)
 
-    # Запас +/- 3ч - 10800( 6ч - 21600)
+    # Запас +/- 3ч - 10800(6ч - 21600)
     wb_orders_fbs = wb_client.get_orders_fbs(from_date=from_date_for_fbs - 10800, to_date=to_date_for_fbs + 10800)
     rids = {order_fbs.get('rid') for order_fbs in wb_orders_fbs}
 
