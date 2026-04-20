@@ -147,20 +147,23 @@ class JSONStorage:
         Returns:
             bool: True если запись успешна, иначе False
         """
-        try:
-            storage_data = {
-                "data": db,
-                "timestamp": datetime.now().isoformat(),
-                "timestamp_unix": time.time(),
-            }
+        if db:
+            try:
+                storage_data = {
+                    "data": db,
+                    "timestamp": datetime.now().isoformat(),
+                    "timestamp_unix": time.time(),
+                }
 
-            with open(self.filename, 'w', encoding='utf-8') as f:
-                json.dump(storage_data, f, separators=(',', ':'), ensure_ascii=False)
-            print(f"✅ Данные записаны в {self.filename}")
-            return True
+                with open(self.filename, 'w', encoding='utf-8') as f:
+                    json.dump(storage_data, f, separators=(',', ':'), ensure_ascii=False)
+                print(f"✅ Данные записаны в {self.filename}")
+                return True
 
-        except Exception as e:
-            print(f"❌ Ошибка при записи данных: {e}")
+            except Exception as e:
+                print(f"❌ Ошибка при записи данных: {e}")
+                return False
+        else:
             return False
 
     def is_data_fresh(self) -> bool:
