@@ -28,8 +28,9 @@ class ApiBase:
             except requests.RequestException as e:
                 if attempt < self.max_retries - 1:
                     logger.debug(e.response.text)
-                    logger.error(f'Неудачный запрос, ошибка: {e}. Повтор через {self.delay_seconds} секунд.')
-                    time.sleep(self.delay_seconds)
+                    delay_seconds = float(e.response.headers.get('X-Ratelimit-Retry', self.delay_seconds))
+                    logger.error(f'Неудачный запрос, ошибка: {e}. Повтор через {delay_seconds} секунд.')
+                    time.sleep(delay_seconds)
                 else:
                     logger.error(
                         f'Достигнуто максимальное количество попыток ({self.max_retries}). '
