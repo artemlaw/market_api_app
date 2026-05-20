@@ -89,6 +89,7 @@ def get_dict_for_commission(ym_client: YaMarket, campaign_id: int, offers: list,
         for index, offer_ in enumerate(offers)
     }
 
+    # Если будет необходимость можно вынести параметр selling_program, чтобы получать не по проекту, а по типу FBS/FBY
     commission = ym_client.get_categories(campaign_id=campaign_id, offers=offers_data)
 
     commission_dict = {}

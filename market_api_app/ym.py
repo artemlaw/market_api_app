@@ -1,5 +1,6 @@
 import logging
 from market_api_app.base import ApiBase
+from market_api_app.utils import convert_list_quotes
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('YaMarket')
@@ -29,12 +30,16 @@ class YaMarket(ApiBase):
         url = self.host + "v2/tariffs/calculate"
         data = {
             "parameters": {
-                "frequency": "BIWEEKLY",
-                "campaignId" if campaign_id else "sellingProgram": campaign_id
-                or selling_program,
+                **({"campaignId": campaign_id} if campaign_id else {"sellingProgram": selling_program,
+                                                                     "frequency": "BIWEEKLY",
+                                                                     "paymentDelayWeeks": 0,
+                                                                     "currency": "RUR"}),
+
             },
             "offers": offers,
         }
+
+
         result = self.post(url, data)
         if not result:
             logger.error("Не удалось получить данные по тарифам.")
