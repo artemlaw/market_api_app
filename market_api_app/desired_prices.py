@@ -36,7 +36,7 @@ def get_ym_desired_prices(plan_margin: float = 28.0, fbs: bool = True, auth_type
     ms_ya_products_ = {
         product["article"]: {
             "STOCK": get_stock_for_bundle(ms_stocks, product),
-            "PRIME_COST": get_prime_cost(product.get("salePrices", [])),
+            "PRIME_COST": get_prime_cost(product.get("salePrices", []), price_name="Цена основная"),
             "NAME": product["name"],
         }
         for product in ms_ya_products
