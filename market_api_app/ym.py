@@ -1,6 +1,5 @@
 import logging
 from market_api_app.base import ApiBase
-from market_api_app.utils import convert_list_quotes
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('YaMarket')
@@ -38,7 +37,6 @@ class YaMarket(ApiBase):
             },
             "offers": offers,
         }
-
 
         result = self.post(url, data)
         if not result:
