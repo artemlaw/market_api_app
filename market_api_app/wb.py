@@ -26,7 +26,8 @@ class WB(ApiBase):
         logger.info(f'Получение данных логистики')
         url = f'https://common-api.{self.domain}/api/v1/tariffs/box'
         current_date = datetime.now().strftime('%Y-%m-%d')
-        params = {'date': current_date}
+        # params = {'date': current_date}
+        params = {'date': '2026-07-31'}
         result = self.get(url, params)
         response_json = result.json() if result else []
         if not result:
