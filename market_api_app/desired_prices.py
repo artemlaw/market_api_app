@@ -634,7 +634,8 @@ def get_wb_desired_prices(plan_margin: float = 28.0, acquiring: float = 2.0, fbs
         tariffs_data = wb_client.get_tariffs_for_box()
         db.write_data(tariffs_data)
 
-    warehouse_name = 'Маркетплейс: Центральный федеральный округ' if fbs else 'Подольск'
+    # warehouse_name = 'Маркетплейс: Центральный федеральный округ' if fbs else 'Подольск'
+    warehouse_name = 'Свой склад РФ' # После 15.08.2026 введен единый тариф
     logistic_dict = get_logistic_dict(tariffs_data, warehouse_name, fbs)
     category_dict = get_category_dict(wb_client)
     wb_prices_dict = get_price_dict(wb_client)
@@ -965,7 +966,7 @@ if __name__ == '__main__':
     # stocks_data = get_stocks_wh(client, [251840861,])
     # print(stocks_data)
 
-    wb = get_wb_desired_prices(plan_margin=28.0, fbs=False)
+    wb = get_wb_desired_prices(plan_margin=28.0, fbs=True)
     print(wb)
 
     # campaign_id_key = "YA_FBS_CAMPAIGN_ID"

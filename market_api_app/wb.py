@@ -26,10 +26,15 @@ class WB(ApiBase):
         logger.info(f'Получение данных логистики')
         url = f'https://common-api.{self.domain}/api/v1/tariffs/box'
         current_date = datetime.now().strftime('%Y-%m-%d')
-        # params = {'date': current_date}
-        params = {'date': '2026-07-31'}
+        params = {'date': current_date}
         result = self.get(url, params)
         response_json = result.json() if result else []
+        dt_till_max = response_json.get('response', {}).get('data', {}).get('dtTillMax')
+        if dt_till_max != current_date:
+            params = {'date': dt_till_max}
+            result = self.get(url, params)
+            response_json = result.json() if result else []
+
         if not result:
             logger.error('Не удалось получить данные о тарифах логистики.')
         return response_json
