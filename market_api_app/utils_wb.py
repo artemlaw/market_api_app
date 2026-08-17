@@ -2,7 +2,7 @@ import time
 from market_api_app import WB
 from market_api_app.utils import get_date_for_request
 
-FBS_COMMISSION = 0.0  # Принудительное повышение комиссии FBS на 0.0% над FBO, так как нет по API
+FBS_COMMISSION = -3.5  # Принудительное повышение комиссии FBS на 0.0% над FBO, так как нет по API
 ACQUIRING_PERCENT = 2.0  # Эквайринг, % по умолчанию
 
 

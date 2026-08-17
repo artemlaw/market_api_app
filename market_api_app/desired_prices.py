@@ -957,7 +957,7 @@ if __name__ == '__main__':
     # oz = get_oz_desired_prices(plan_margin=28.0)
     # print(oz)
 
-    # wb_orders = get_wb_profitability('2026-07-01', '2026-07-08', plan_margin=28.0, acquiring=2.0,
+    # wb_orders = get_wb_profitability('2026-08-14', '2026-08-14', plan_margin=28.0, acquiring=2.0,
     #                                  one_fbs=True, save_to_tab=True)
     # # wb_orders = get_wb_orders('2025-08-07', '2025-08-07')
     # print(wb_orders)
