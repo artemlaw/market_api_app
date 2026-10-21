@@ -953,9 +953,9 @@ if __name__ == '__main__':
     # ya = get_prices_dict(ym_client, campaign_id)
     # print(ya)
 
-    # oz = get_oz_profitability('20-01-2026', '21-01-2026', plan_margin=28.0, price_cost_name='Цена основная')
+    oz = get_oz_profitability('20-10-2026', '21-10-2026', plan_margin=28.0, price_cost_name='Цена основная')
     # oz = get_oz_desired_prices(plan_margin=28.0)
-    # print(oz)
+    print(oz)
 
     # wb_orders = get_wb_profitability('2026-08-14', '2026-08-14', plan_margin=28.0, acquiring=2.0,
     #                                  one_fbs=True, save_to_tab=True)
@@ -966,8 +966,8 @@ if __name__ == '__main__':
     # stocks_data = get_stocks_wh(client, [251840861,])
     # print(stocks_data)
 
-    wb = get_wb_desired_prices(plan_margin=28.0, fbs=True)
-    print(wb)
+    # wb = get_wb_desired_prices(plan_margin=28.0, fbs=True)
+    # print(wb)
 
     # campaign_id_key = "YA_FBS_CAMPAIGN_ID"
     # ms_token, ym_token, business_id, campaign_id = get_api_keys(["MS_API_TOKEN", "YM_API_TOKEN", "YA_BUSINESS_ID",

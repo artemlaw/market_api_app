@@ -123,18 +123,17 @@ class Ozon(ApiBase):
 
     def get_orders(self, from_date, to_date):
         logger.info(f"Получение информации о заказах")
-        url = self.host + "v3/posting/fbs/list"
+        url = self.host + "v4/posting/fbs/list"
         since = date_to_utc(from_date)
         to = date_to_utc(to_date, start_of_day=False)
         data = {
-            "dir": "ASC",
+            "sort_dir": "ASC",
             "filter": {
-                "is_quantum": False,
                 "since": since,
                 "to": to
             },
-            "limit": 1000,
-            "offset": 0,
+            "limit": 100,
+            "cursor": "",
             "with": {
                 "analytics_data": False,
                 "barcodes": False,
@@ -142,8 +141,14 @@ class Ozon(ApiBase):
                 "translit": False
             }
         }
-        result = self.post(url, data)
-        result_json = result.json() if result else {}
-        if not result:
-            logger.error('Не удалось получить информацию по заказам.')
-        return result_json.get("result", {}).get("postings", [])
+
+        postings_list = []
+        while True:
+            result = self.post(url, data)
+            result_json = result.json() or {}
+            postings = result_json.get("postings", [])
+            postings_list.extend(postings)
+            data["cursor"] = result_json.get("cursor", "")
+            if not result_json.get("has_next", False):
+                break
+        return postings_list

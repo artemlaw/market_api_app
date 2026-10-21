@@ -56,7 +56,7 @@ def get_oz_orders(oz_client: Ozon, from_date: str = '12-12-2024', to_date: str =
             'order_number': order.get('posting_number', ''),
             'created': order.get('in_process_at', ''),
             'article': position.get('offer_id', ''),
-            'price': float(position.get('price', '0.0000')),
+            'price': float(position.get('price', {}).get('amount', '0.0000')),
             'quantity': position.get('quantity', 0)
         }
         for order in oz_orders
